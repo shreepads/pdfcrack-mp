@@ -15,6 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, 
  * USA.
+ *
+ * Copyright (C) 2015 Shreepad Shukla
  */
 
 #ifndef _PDFCRACK_H_
@@ -26,8 +28,8 @@
 bool
 initPDFCrack(const EncData *e, const uint8_t *upw, const bool user,
 	     const char *wl, const passwordMethod pm, FILE *file,
-	     const char *cs, const unsigned int minPw,
-	     const unsigned int maxPw, const bool perm);
+	     const char *cs, const char *pat, const unsigned int minPw,
+	     const unsigned int maxPw, const bool perm, const bool qt, int numthreads);
 
 bool
 loadState(FILE *file, EncData *e, char **wl, bool *user);

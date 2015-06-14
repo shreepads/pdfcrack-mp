@@ -15,6 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, 
  * USA.
+ *
+ * Copyright (C) 2015 Shreepad Shukla
  */
 
 #ifndef _PDFCOMMON_H_
@@ -53,7 +55,8 @@ typedef struct EncData EncData;
 
 typedef enum passwordMethod {
   Wordlist=1,
-  Generative
+  Generative,
+  Pattern
 } passwordMethod;
 
 void

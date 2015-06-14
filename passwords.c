@@ -15,6 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, 
  * USA.
+ *
+ * Copyright (C) 2015 Shreepad Shukla
  */
 
 #include <stdbool.h>
@@ -23,7 +25,6 @@
 #include <stdint.h>
 #include "passwords.h"
 
-#define PASSLENGTH 33
 
 static FILE *wordList = NULL;
 static const char *wordListName;
@@ -31,6 +32,8 @@ static bool wlMore;
 static bool (*npw)() = NULL;
 static unsigned int (*spw)(uint8_t *outbuf) = NULL;
 static passwordMethod pwMethod;
+
+static int numberthreads = 1;
 
 bool
 nextPassword() { return npw(); }
@@ -162,13 +165,28 @@ setCharset(const char *cs, const unsigned int minPw,
   password[PASSLENGTH-1] = -1;
 }
 
+
+// static variables and functions to handle password patterns
+
+static const uint8_t *pattern;
+static unsigned int patternLen;
+
+
+static void setPattern(const char *pat)
+{
+	pattern = (const uint8_t*)pat;
+	patternLen = strlen((const char*)pattern);
+}
+
 void
 initPasswords(const passwordMethod pm, FILE *file, const char *wl,
-	      const char *cs, const unsigned int minPw,
-	      const unsigned int maxPw) {
+	      const char *cs, const char* pat, const unsigned int minPw,
+	      const unsigned int maxPw, const bool qt, int numthreads) {
   if(!recovery)
     pwMethod = pm;
 
+  numberthreads = numthreads;
+  
   switch(pwMethod) {
   case Generative:
     setCharset(cs, minPw, maxPw);
@@ -176,6 +194,13 @@ initPasswords(const passwordMethod pm, FILE *file, const char *wl,
   case Wordlist:
     setWordList(file, wl);
     break;
+  
+  case Pattern:
+    setPattern(pat);
+    if (!qt)
+    	printf("Set pattern: %s\n", pat);
+    break;
+    
   default:
     /** The programmer is a twit!  */
     break;

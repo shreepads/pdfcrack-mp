@@ -30,6 +30,8 @@
 #include "pdfparser.h"
 #include "pdfcrack.h"
 #include "benchmark.h"
+#include "passwords.h"
+
 
 #define PRINTERVAL 20 /** Print Progress Interval (seconds) */
 #define CRASHFILE "savedstate.sav"
@@ -307,25 +309,53 @@ main(int argc, char** argv) {
       goto out2;
     }
   }
+  
+  // Check that pattern is not longer than max password length
+  
+  if (pattern)
+  {
+  	int patLen = strlen(pattern);
+  	if (patLen > PASSLENGTH)
+  	{
+	      fprintf(stderr,"Error: Pattern %s longer than max password length %i\n", pattern, PASSLENGTH);
+	      ret = 8;
+	      goto out2;
+  	}
+  }
+
+  passwordMethod pmethod;
+  
+  if (wordlistfile)
+  	pmethod = Wordlist;
+  else if (pattern)
+  	pmethod = Pattern;
+  else
+  	pmethod = Generative;
+
 
   act2.sa_handler = autoSave;
   sigfillset(&act2.sa_mask);
   act2.sa_flags = 0;
   sigaction(SIGINT, &act2, 0);
 
+
   if(!quiet) {
     printEncData(e);
+    printf("Password method %i\n", pmethod);
+    
     act1.sa_handler = alarmInterrupt;
     sigemptyset(&act1.sa_mask);
     act1.sa_flags = 0;
     sigaction(SIGALRM, &act1, 0);
     alarm(PRINTERVAL);
   }
+  
+
 
   /** Try to initialize the cracking-engine */
   if(!initPDFCrack(e, userpassword, work_with_user, wordlistfile,
-		   wordlistfile?Wordlist:Generative, wordlist, charset, 
-		   (unsigned int)minpw, (unsigned int)maxpw, permutation)) {
+		   pmethod, wordlist, charset, pattern,
+		   (unsigned int)minpw, (unsigned int)maxpw, permutation, quiet, numthreads)) {
     cleanPDFCrack();
     fprintf(stderr, "Wrong userpassword, '%s'\n", userpassword);
     ret = 7;

@@ -15,6 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, 
  * USA.
+ *
+ * Copyright (C) 2015 Shreepad Shukla
  */
 
 #ifndef _PDFPASSWORDS_H_
@@ -23,11 +25,12 @@
 #include <stdio.h>
 #include "common.h"
 
+#define PASSLENGTH 33
 
 void
 initPasswords(const passwordMethod pm, FILE *file, const char *wl,
-	      const char *cs, const unsigned int minPw,
-	      const unsigned int maxPw);
+	      const char *cs, const char* pat, const unsigned int minPw,
+	      const unsigned int maxPw, const bool qt, int numthreads);
 
 bool
 nextPassword(void);

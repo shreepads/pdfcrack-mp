@@ -16,6 +16,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, 
  * USA.
+ *
+ * Copyright (C) 2015 Shreepad Shukla
  */
 
 #include <stdbool.h>
@@ -606,8 +608,8 @@ cleanPDFCrack(void) {
 bool
 initPDFCrack(const EncData *e, const uint8_t *upw, const bool user,
 	     const char *wl, const passwordMethod pm, FILE *file,
-	     const char *cs, const unsigned int minPw,
-	     const unsigned int maxPw, const bool perm) {
+	     const char *cs, const char *pat, const unsigned int minPw,
+	     const unsigned int maxPw, const bool perm, const bool qt, int numthreads) {
   uint8_t buf[128];
   unsigned int upwlen;
   uint8_t *tmp;
@@ -628,7 +630,7 @@ initPDFCrack(const EncData *e, const uint8_t *upw, const bool user,
       permutate = do_permutate;
     else
       permutate = no_permutate;
-    initPasswords(pm, file, wl, cs, minPw, maxPw);
+    initPasswords(pm, file, wl, cs, pat, minPw, maxPw, qt, numthreads);
     return true;
   }
 
@@ -684,7 +686,7 @@ initPDFCrack(const EncData *e, const uint8_t *upw, const bool user,
   else
     permutate = no_permutate;
 
-  initPasswords(pm, file, wl, cs, minPw, maxPw);
+  initPasswords(pm, file, wl, cs, pat, minPw, maxPw, qt, numthreads);
   return true;
 }
 
