@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <unistd.h>
+#include <omp.h>
 #include "pdfparser.h"
 #include "pdfcrack.h"
 #include "benchmark.h"
@@ -67,6 +68,7 @@ printHelp(char *progname) {
 	 "OPTIONS:\n"
 	 "-b, --bench\t\tperform benchmark and exit\n"
 	 "-c, --charset=STRING\tUse the characters in STRING as charset\n"
+	 "-e, --pattern=STRING\tUse the pattern in STRING\n"
 	 "-w, --wordlist=FILE\tUse FILE as source of passwords to try\n"
 	 "-n, --minpw=INTEGER\tSkip trying passwords shorter than this\n"
 	 "-m, --maxpw=INTEGER\tStop when reaching this passwordlength\n"
@@ -78,6 +80,7 @@ printHelp(char *progname) {
 	 "-q, --quiet\t\tRun quietly\n"
 	 "-s, --permutate\t\tTry permutating the passwords (currently only\n"
 	 "\t\t\tsupports switching first character to uppercase)\n"
+	 "-t, --threads=INTEGER\tUse these many threads\n"
 	 "-v, --version\t\tPrint version and exit\n",
 	 progname);
 }
@@ -91,6 +94,8 @@ main(int argc, char** argv) {
     work_with_user = true, permutation = false;
   uint8_t *userpassword = NULL;
   char *charset = NULL, *inputfile = NULL, *wordlistfile = NULL;
+  char *pattern = NULL;
+  int numthreads = 1;
   EncData *e;
 
   /** Parse arguments */
@@ -99,6 +104,7 @@ main(int argc, char** argv) {
     static struct option long_options[] = {
       {"bench",    no_argument      , 0, 'b'},
       {"charset",  required_argument, 0, 'c'},
+      {"pattern",  required_argument, 0, 'e'},
       {"file",     required_argument, 0, 'f'},
       {"loadState",required_argument, 0, 'l'},
       {"maxpw",    required_argument, 0, 'm'},
@@ -107,6 +113,7 @@ main(int argc, char** argv) {
       {"password", required_argument, 0, 'p'},
       {"quiet",    required_argument, 0, 'q'},     
       {"permutate",no_argument,       0, 's'},
+      {"threads",  required_argument, 0, 't'},
       {"user",     no_argument      , 0, 'u'},
       {"wordlist", required_argument, 0, 'w'},
       {"version",  no_argument      , 0, 'v'},     
@@ -114,7 +121,7 @@ main(int argc, char** argv) {
     /* getopt_long stores the option index here. */
     option_index = 0;
      
-    c = getopt_long(argc, argv, "bc:f:l:m:n:op:qsuw:v",
+    c = getopt_long(argc, argv, "bc:e:f:l:m:n:op:qst:uw:v",
 			long_options, &option_index);
     
     /* Detect the end of the options. */
@@ -131,6 +138,14 @@ main(int argc, char** argv) {
       else
 	charset = strdup(optarg);
       break;
+      
+    case 'e':
+      if(pattern)
+	fprintf(stderr,"Pattern already set\n");
+      else
+	pattern = strdup(optarg);
+      break;
+    
     case 'f':
       if(!recovery)
 	inputfile = strdup(optarg);
@@ -176,6 +191,15 @@ main(int argc, char** argv) {
 
     case 's':
       permutation = true;
+      break;
+
+    case 't':
+      numthreads = atoi(optarg);
+      if ((numthreads < 1)  ||  (numthreads > omp_get_max_threads()))
+      {
+      	numthreads = 1;
+      	fprintf(stderr, "Invalid thread number, set to 1\n");
+      }
       break;
 
     case 'w':
@@ -324,6 +348,9 @@ main(int argc, char** argv) {
     free(charset);
   if(userpassword)
     free(userpassword);
+    
+  if(pattern)
+    free(pattern);
 
   return 0;
 
@@ -339,6 +366,9 @@ main(int argc, char** argv) {
     free(charset);
   if(userpassword)
     free(userpassword);
+
+  if(pattern)
+    free(pattern);
 
   exit(ret);
 }

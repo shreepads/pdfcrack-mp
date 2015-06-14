@@ -1,4 +1,4 @@
-CFLAGS += -Wall -Wextra -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -O3 -g
+CFLAGS += -Wall -Wextra -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -O3 -g -fopenmp
 
 all: pdfcrack
 
@@ -10,7 +10,7 @@ pdfreader: pdfparser.o pdfreader.o common.o
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $+
 
 clean:
-	rm -f pdfcrack pdfreader testreader *.o
+	rm -f pdfcrack pdfreader testreader savedstate.sav *.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -c -o $@ $+
