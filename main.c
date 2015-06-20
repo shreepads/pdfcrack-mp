@@ -310,6 +310,7 @@ main(int argc, char** argv) {
     }
   }
   
+  /*
   // Check that pattern is not longer than max password length
   
   if (pattern)
@@ -322,6 +323,7 @@ main(int argc, char** argv) {
 	      goto out2;
   	}
   }
+  */
 
   passwordMethod pmethod;
   
@@ -361,6 +363,20 @@ main(int argc, char** argv) {
     ret = 7;
     goto out2;
   }
+  
+  // Test the pattern password generator
+  
+  uint8_t password[PASSLENGTH];
+  
+  for (unsigned long long int i=0; i<100000L; i++)
+  {
+  	if (getPatternPassword(i, password))
+	  	printf("Password %lli: %s\n", i, password);
+  }
+  
+  printf("On to the crack\n");
+  fflush(stdout);
+  
 
   /** Do the actual crunching */
   runCrack();

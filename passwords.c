@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "passwords.h"
+#include "pattern.h"
 
 
 static FILE *wordList = NULL;
@@ -165,18 +166,74 @@ setCharset(const char *cs, const unsigned int minPw,
   password[PASSLENGTH-1] = -1;
 }
 
-
-// static variables and functions to handle password patterns
+// Static variables and functions for patterns - uses pattern.h
 
 static const uint8_t *pattern;
 static unsigned int patternLen;
 
+static uint8_t* passwordPatternArray[PASSLENGTH];
+static unsigned int passwordPatternLengths[PASSLENGTH];
+static unsigned long long int passwordPatternDivs[PASSLENGTH];
+static unsigned long long int maxPatternPasswords;
 
 static void setPattern(const char *pat)
 {
-	pattern = (const uint8_t*)pat;
-	patternLen = strlen((const char*)pattern);
+	// Parse the pattern into basic [] format
+	pattern = (const uint8_t*)parsePattern(pat);
+	patternLen = patternLength((const char*)pattern);
+	
+	//passwordPatternArray = malloc(patternLen * sizeof(uint8_t*));
+	//passwordPatternLengths = malloc(patternLen * sizeof(unsigned int));
+	
+	// Convert basic format pattern into password pattern array	
+	setPatternArray(pattern, patternLen, passwordPatternArray, passwordPatternLengths, passwordPatternDivs);
+	
+	maxPatternPasswords = passwordPatternDivs[patternLen-1]*passwordPatternLengths[patternLen-1];
+	
+	for (unsigned int i=0; i<patternLen; i++)
+	{	
+		printf("Pattern element %i: Value: %s, Length: %i, Divisor: %lli\n", 
+			i, passwordPatternArray[i], passwordPatternLengths[i], passwordPatternDivs[i]);
+	}
+	
+	printf("Max pattern passwords: %lli\n", maxPatternPasswords);
+	
+	return;
 }
+
+
+// Utility function to get maximum number of password patterns
+unsigned long long int getMaxPatternPasswords()
+{
+	return maxPatternPasswords;
+}
+
+
+// Core function to return the ith password from the password pattern array
+
+int getPatternPassword(long long int n, uint8_t* patPassword)
+{
+	if (!patPassword)
+		return 0;
+		
+	if (!pattern)
+		return 0;
+		
+	if (n >= maxPatternPasswords)
+		return 0;
+	
+	for (unsigned int i=0; i<patternLen; i++)
+	{
+		int index = (n / passwordPatternDivs[i]) % passwordPatternLengths[i];
+		
+		patPassword[i] = passwordPatternArray[i][index];
+	}
+	
+	patPassword[patternLen] = '\0';
+	
+	return 1;
+}
+
 
 void
 initPasswords(const passwordMethod pm, FILE *file, const char *wl,
@@ -197,8 +254,6 @@ initPasswords(const passwordMethod pm, FILE *file, const char *wl,
   
   case Pattern:
     setPattern(pat);
-    if (!qt)
-    	printf("Set pattern: %s\n", pat);
     break;
     
   default:

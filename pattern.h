@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Henning Norén
+ * Copyright (C) 2015 Shreepad Shukla
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -16,34 +16,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, 
  * USA.
  *
- * Copyright (C) 2015 Shreepad Shukla
  */
+ 
+uint8_t* parsePattern(const char* pat);
+ 
+unsigned int patternLength(const char* pattern);
 
-#ifndef _PDFPASSWORDS_H_
-#define _PDFPASSWORDS_H_
+void setPatternArray(const uint8_t* pat, unsigned int patLen,  
+		uint8_t* passwordPatArray[], unsigned int passwordPatLengths[], unsigned long long int passwordPatDivs[]);
 
-#include <stdio.h>
-#include "common.h"
-
-#define PASSLENGTH 33
-
-void
-initPasswords(const passwordMethod pm, FILE *file, const char *wl,
-	      const char *cs, const char* pat, const unsigned int minPw,
-	      const unsigned int maxPw, const bool qt, int numthreads);
-
-bool
-nextPassword(void);
-
-unsigned int
-setPassword(uint8_t *outbuf);
-
-bool
-pw_loadState(FILE *file, char **wl);
-
-void
-pw_saveState(FILE *file);
-
-int getPatternPassword(long long int n, uint8_t* patPassword);
-
-#endif /** _PDFPASSWORDS_H_ */

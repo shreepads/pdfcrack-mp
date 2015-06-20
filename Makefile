@@ -2,7 +2,7 @@ CFLAGS += -Wall -Wextra -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -O3 -g -fop
 
 all: pdfcrack
 
-pdfcrack: main.o sha256.o rc4.o md5.o pdfcrack.o pdfparser.o passwords.o common.o \
+pdfcrack: main.o sha256.o rc4.o md5.o pdfcrack.o pdfparser.o passwords.o common.o pattern.o \
 	benchmark.o
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $+
 
