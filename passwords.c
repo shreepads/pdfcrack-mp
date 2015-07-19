@@ -168,7 +168,7 @@ setCharset(const char *cs, const unsigned int minPw,
 
 // Static variables and functions for patterns - uses pattern.h
 
-static const uint8_t *pattern;
+static const char *pattern;
 static unsigned int patternLen;
 
 static uint8_t* passwordPatternArray[PASSLENGTH];
@@ -179,8 +179,8 @@ static unsigned long long int maxPatternPasswords;
 static void setPattern(const char *pat)
 {
 	// Parse the pattern into basic [] format
-	pattern = (const uint8_t*)parsePattern(pat);
-	patternLen = patternLength((const char*)pattern);
+	pattern = parsePattern(pat);
+	patternLen = patternLength(pattern);
 	
 	//passwordPatternArray = malloc(patternLen * sizeof(uint8_t*));
 	//passwordPatternLengths = malloc(patternLen * sizeof(unsigned int));

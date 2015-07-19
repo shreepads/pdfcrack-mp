@@ -572,8 +572,8 @@ runCrackRev3(void) {
 			{
 
 				threadId = omp_get_thread_num();
-				//printf("Thread %i: Password %lli: %s, Length %i\n", \
-					threadId, innerindex, currentPatternPassword, currentPatternPasswordLength);
+				//printf("Thread %i: Password %lli: %s, Length %i\n", 
+				//	threadId, innerindex, currentPatternPassword, currentPatternPasswordLength);
 				
 				// Check if password at index innerindex is the correct one
 				// BEGIN_CRACK_LOOP

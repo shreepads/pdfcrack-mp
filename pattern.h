@@ -18,10 +18,10 @@
  *
  */
  
-uint8_t* parsePattern(const char* pat);
+char* parsePattern(const char* pat);
  
 unsigned int patternLength(const char* pattern);
 
-void setPatternArray(const uint8_t* pat, unsigned int patLen,  
+void setPatternArray(const char* pat, unsigned int patLen,  
 		uint8_t* passwordPatArray[], unsigned int passwordPatLengths[], unsigned long long int passwordPatDivs[]);
 

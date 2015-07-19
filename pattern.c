@@ -83,7 +83,7 @@ unsigned int patternLength(const char* pat)
 }
 
 
-// Take the pattern, validate it and return a string with all possible chars indiviudally listed within []
+// Take the pattern, validate it and return a string with all possible charsets indiviudally listed within []
 
 char* parsePattern(const char* pat)
 {
@@ -113,22 +113,53 @@ char* parsePattern(const char* pat)
 
 
 // Turn a parsed patern string into an array of password chars and associated lengths of each
-void setPatternArray(const uint8_t* pat, unsigned int patLen, 
+void setPatternArray(const char* pat, unsigned int patLen, 
 	uint8_t* passwordPatArray[], unsigned int passwordPatLengths[], unsigned long long int passwordPatDivs[])
 {
-	printf("Parsed pattern: %s, length: %i\n", (const char *)pat, patLen);
+	printf("Parsed pattern: %s, length: %i\n", pat, patLen);
 	
+	// Create temp pattern holder for tokenisation, 2 less for the ends, 1 for the /0
+	char tokPat[strlen(pat)-2+1];
+	strncpy(tokPat, &pat[1], strlen(pat)-2);
+	tokPat[strlen(pat)-2] = '\0';
+	
+	printf("tokPat: %s\n", tokPat);
+	
+	
+	// Use string tokenizer with separator ][ to pick individual charsets
+	
+	char *scratch, *token, *delimiter = "][";
+	
+	int i = 0;
+	token = strtok_r(tokPat, delimiter, &scratch);
+	
+	do
+	{
+		if (token)
+		{
+			//passwordPatArray[i] = malloc(strlen(token));
+			//strncpy(&passwordPatArray[i], token, strlen); 
+			
+			asprintf((char **)&passwordPatArray[i], "%s", token);
+			
+			passwordPatLengths[i] = strlen((char *) passwordPatArray[i]);
+			
+			if (i==0)
+				passwordPatDivs[i]=1LL;
+			else
+				passwordPatDivs[i]=passwordPatLengths[i]*passwordPatDivs[i-1];
+				
+			i++;
+		}
+	}
+	while(strtok_r(NULL, delimiter, &scratch));
+	
+	
+	/*
 	for (unsigned long long int i=0; i<patLen; i++)
 	{
-		/* Simple test
-		if (i<4)
-			passwordPatArray[i] = "abkr";
-		else
-			passwordPatArray[i] = "369";
-		*/
-		
-		// Equiv test
-		passwordPatArray[i] = "bark936";
+	
+		passwordPatArray[i] = "Niy546";
 		
 		 passwordPatLengths[i] = strlen((char *) passwordPatArray[i]);
 		 
@@ -137,6 +168,7 @@ void setPatternArray(const uint8_t* pat, unsigned int patLen,
 		 else
 		 	passwordPatDivs[i]=passwordPatLengths[i]*passwordPatDivs[i-1];
 	}
+	*/
 	
 	return;
 	

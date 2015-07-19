@@ -1,4 +1,4 @@
-CFLAGS += -Wall -Wextra -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -O0 -g -fopenmp
+CFLAGS += -Wall -Wextra -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -O3 -g -fopenmp
 
 all: pdfcrack
 
@@ -14,21 +14,18 @@ clean:
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -c -o $@ $+
+		
+test3: pdfcrack
+	./pdfcrack -c Niy546 -n 6 -m 6 ./testpdfs/TestPDF3.pdf
+	./pdfcrack -t 5 -e [Niy546][Niy546][Niy546][Niy546][Niy546][Niy546] ./testpdfs/TestPDF3.pdf
 	
-regtest: pdfcrack
-	./pdfcrack -c bark936 -n 8 -m 8 ~/Downloads/100008929366.pdf
-	./pdfcrack -t 1 -e [abkr][abkr][abkr][abkr][936][936][936][936] ~/Downloads/100008929366.pdf
-	./pdfcrack -t 5 -e [abkr][abkr][abkr][abkr][936][936][936][936] ~/Downloads/100008929366.pdf
-	
-test: pdfcrack
-	./pdfcrack -t 5 -e [abkr][abkr][abkr][abkr][936][936][936][936] ~/Downloads/100008929366.pdf
-	
-testsingle: pdfcrack
-	./pdfcrack -t 1 -e [abkr][abkr][abkr][abkr][936][936][936][936] ~/Downloads/100008929366.pdf
+perftest3: pdfcrack
+	./pdfcrack -c Niy1234567890 -n 6 -m 6 ./testpdfs/TestPDF3.pdf
+	./pdfcrack -t 5 -e [Niy1234567890][Niy1234567890][Niy1234567890][Niy1234567890][Niy1234567890][Niy1234567890] ./testpdfs/TestPDF3.pdf
 	
 debugold: pdfcrack
-	gdb --args ./pdfcrack -c bark936 -n 8 -m 8 ~/Downloads/100008929366.pdf
+	gdb --args ./pdfcrack -c Niy546 -n 6 -m 6 ./testpdfs/TestPDF3.pdf
 	
 debugnew: pdfcrack
-	gdb --args ./pdfcrack -t 1 -e [abkr][abkr][abkr][abkr][936][936][936][936] ~/Downloads/100008929366.pdf
+	gdb --args ./pdfcrack -t 5 -e [Niy546][Niy546][Niy546][Niy546][Niy546][Niy546] ./testpdfs/TestPDF3.pdf
 	
