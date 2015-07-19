@@ -1,0 +1,40 @@
+TestPDF0.pdf
+	No password, master document from which all the following password protected ones were created
+
+
+TestPDF1.pdf
+	Revision 3
+	User Password: Veb598
+	Owner Password: Jmy831
+
+
+TestPDF2.pdf
+	Revision 2
+	User Password: Jhe238
+	Owner Password: <none>
+
+
+TestPDF3.pdf
+	Revision 3 (AES)
+	User Password: Niy546
+	Owner Password: <none>
+
+TestPDF4.pdf
+	Revision 3 (RC4)
+	User Password: Ktw810
+	Owner Password: <none>
+
+TestPDF5.pdf
+	Revsion 2
+	User Password: Txz906
+	Owner Password: Rkz573
+
+TestPDF6.pdf
+	Revision 5 (AES 256)
+	User Password: Mnv731
+	Owner Password: password
+
+
+7. AES 256: u: Hdo256, Nzd695
+
+
