@@ -120,8 +120,18 @@ void setPatternArray(const uint8_t* pat, unsigned int patLen,
 	
 	for (unsigned long long int i=0; i<patLen; i++)
 	{
-		 passwordPatArray[i] = "ab12";
+		/* Simple test
+		if (i<4)
+			passwordPatArray[i] = "abkr";
+		else
+			passwordPatArray[i] = "369";
+		*/
+		
+		// Equiv test
+		passwordPatArray[i] = "bark936";
+		
 		 passwordPatLengths[i] = strlen((char *) passwordPatArray[i]);
+		 
 		 if (i==0)
 		 	passwordPatDivs[i]=1LL;
 		 else

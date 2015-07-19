@@ -46,4 +46,6 @@ pw_saveState(FILE *file);
 
 int getPatternPassword(long long int n, uint8_t* patPassword);
 
+unsigned long long int getMaxPatternPasswords();
+
 #endif /** _PDFPASSWORDS_H_ */

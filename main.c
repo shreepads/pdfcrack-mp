@@ -27,6 +27,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <omp.h>
+#include <time.h>
 #include "pdfparser.h"
 #include "pdfcrack.h"
 #include "benchmark.h"
@@ -201,8 +202,8 @@ main(int argc, char** argv) {
       numthreads = atoi(optarg);
       if ((numthreads < 1)  ||  (numthreads > omp_get_max_threads()))
       {
-      	numthreads = 1;
-      	fprintf(stderr, "Invalid thread number, set to 1\n");
+      	numthreads = omp_get_max_threads();
+      	printf("Invalid thread number, set to %i\n", numthreads);
       }
       break;
 
@@ -365,21 +366,31 @@ main(int argc, char** argv) {
   }
   
   // Test the pattern password generator
-  
-  uint8_t password[PASSLENGTH];
-  
-  for (unsigned long long int i=0; i<100000L; i++)
+  /*
+  if (pattern)
   {
-  	if (getPatternPassword(i, password))
-	  	printf("Password %lli: %s\n", i, password);
+	  uint8_t password[PASSLENGTH+1];
+	  
+	  for (unsigned long long int i=0; i<100000L; i++)
+	  {
+	  	if (getPatternPassword(i, password))
+		  	printf("Password %lli: %s\n", i, password);
+	  }
   }
+  */
   
   printf("On to the crack\n");
   fflush(stdout);
   
 
   /** Do the actual crunching */
+  time_t starttime = time(NULL);
+  
   runCrack();
+  
+  time_t endtime = time(NULL);
+  double runtimeinsecs = difftime(endtime, starttime);
+  printf("Time taken (secs): %f \n", runtimeinsecs);
 
 
   /** cleanup */

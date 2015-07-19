@@ -26,6 +26,7 @@
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+#include <omp.h>
 #include "pdfcrack.h"
 #include "md5.h"
 #include "rc4.h"
@@ -38,6 +39,9 @@
     motivate a full retry on that entry.
  */
 #define PARTIAL_TEST_SIZE 3
+
+// Stripe size for multi-thread, default suitable for regular PCs, adjust upwards for high power processors
+#define STRIPE_SIZE 10000
 
 static const uint8_t
 pad[32] = {
@@ -58,6 +62,14 @@ static uint8_t *currPW;
 /** current length of the password we are working with */
 static unsigned int currPWLen;
 
+
+/** points to the current pattern password index */
+static unsigned long long int currPatternPasswordIndex;
+
+/** points to the current pattern password index */
+static unsigned long long int finalPatternPasswordIndex;
+
+
 /** statistics */
 static unsigned int nrprocessed;
 static time_t startTime;
@@ -69,6 +81,9 @@ static const EncData *encdata;
 static bool crackDone;
 static bool knownPassword;
 static bool workWithUser;
+
+static passwordMethod passMeth;
+static int numThreads;
 
 /** Print out some statistics */
 bool
@@ -84,7 +99,19 @@ printProgress(void) {
   str[currPWLen] = '\0';
   printf("Average Speed: %.1f w/s. ",
 	 nrprocessed/difftime(currentTime,startTime));
-  printf("Current Word: '%s'\n",str);
+	 
+  if (passMeth != Pattern)
+  {
+  	printf("Current Word: '%s'\n",str);
+  }
+  else
+  {
+  	uint8_t currPatternPassword[PASSLENGTH+1];
+			
+	if (getPatternPassword(currPatternPasswordIndex, currPatternPassword))
+		printf("Current Pattern Word: '%s'\n",currPatternPassword);
+  }
+  
   fflush(stdout);
   nrprocessed = 0;
   startTime = time(NULL);
@@ -198,35 +225,58 @@ static bool (*permutate)() = NULL;
 /** Prints out the password found */
 static void
 foundPassword(void) {
-  char str[33];
-  int fin_search;
-  size_t pad_start;
 
-  memcpy(str,currPW,currPWLen);
-  str[currPWLen] = '\0';
-  printf("found %s-password: '%s'\n", workWithUser?"user":"owner", str);
+  if (passMeth != Pattern)
+  {
+	  // Wordlist or charset
+	  
+	  char str[33];
+	  int fin_search;
+	  size_t pad_start;
 
-  /** 
-   * Print out the user-password too if we know the ownerpassword.
-   * It is placed in password_user and we need to find where the pad
-   * starts before we can print it out (without ugly artifacts) 
-   **/
-    
-  if(!workWithUser && (encdata->revision < 5)) {
-    fin_search=-1;
-    pad_start=0;
+	  memcpy(str,currPW,currPWLen);
+	  str[currPWLen] = '\0';
+	  printf("found %s-password: '%s'\n", workWithUser?"user":"owner", str);
 
-    do {
-      fin_search = memcmp(password_user+pad_start, pad, 32-pad_start);
-      pad_start++;
-    } while (pad_start < 32 && fin_search != 0);
+	  /** 
+	   * Print out the user-password too if we know the ownerpassword.
+	   * It is placed in password_user and we need to find where the pad
+	   * starts before we can print it out (without ugly artifacts) 
+	   **/
+	    
+	  if(!workWithUser && (encdata->revision < 5)) {
+	    fin_search=-1;
+	    pad_start=0;
 
-    memcpy(str, password_user, pad_start);
-    if(!fin_search)
-      str[pad_start-1] = '\0';
-    printf("found user-password: '%s'\n", str);
+	    do {
+	      fin_search = memcmp(password_user+pad_start, pad, 32-pad_start);
+	      pad_start++;
+	    } while (pad_start < 32 && fin_search != 0);
+
+	    memcpy(str, password_user, pad_start);
+	    if(!fin_search)
+	      str[pad_start-1] = '\0';
+	    printf("found user-password: '%s'\n", str);
+	  }
   }
+  else
+  {
+  	// Pattern method
+	uint8_t patternPassword[PASSLENGTH+1];
+			
+	if (getPatternPassword(finalPatternPasswordIndex, patternPassword))
+	{
+		printf("Found pattern password: %s\n", (char *) patternPassword);
+	}
+	else
+	{
+		printf("Could not find pattern password\n");
+	}
+  	
+  }
+	 
 }
+
 
 /** Common handling of the key for all rev3-functions */
 #define RC4_DECRYPT_REV3(n) {			\
@@ -316,33 +366,49 @@ runCrackRev2_o(void) {
 
 bool
 runCrackRev3_o(void) {
-  uint8_t test[32], enckey[16], tmpkey[16];
-  unsigned int j, length, lpasslength;
-  int i;
 
-  length = encdata->length/8;
-  lpasslength = 0;
-  startTime = time(NULL);
-  do {
-    BEGIN_CRACK_LOOP();
+  printf("Entered runCrackRev3_o\n");
+  
+  if (passMeth != Pattern)
+  {
+  	// Wordlist or Generative
+  	
+	  uint8_t test[32], enckey[16], tmpkey[16];
+	  unsigned int j, length, lpasslength;
+	  int i;
 
-    do {
-      md5(currPW, 32, enckey);
+	  length = encdata->length/8;
+	  lpasslength = 0;
+	  startTime = time(NULL);
+	  do {
+	    BEGIN_CRACK_LOOP();
 
-      md5_50(enckey, length);
+	    do {
+	      md5(currPW, 32, enckey);
 
-      memcpy(test, encdata->o_string, 32);
-      RC4_DECRYPT_REV3(32);
-      memcpy(encKeyWorkSpace, test, 32);
+	      md5_50(enckey, length);
 
-      if(isUserPasswordRev3()) {
-        memcpy(password_user, encKeyWorkSpace, 32);
-	return true;
-      }
+	      memcpy(test, encdata->o_string, 32);
+	      RC4_DECRYPT_REV3(32);
+	      memcpy(encKeyWorkSpace, test, 32);
 
-      ++nrprocessed;
-    } while(permutate());
-  } while(nextPassword());
+	      if(isUserPasswordRev3()) {
+		memcpy(password_user, encKeyWorkSpace, 32);
+		return true;
+	      }
+
+	      ++nrprocessed;
+	    } while(permutate());
+	  } while(nextPassword());
+  }
+  else
+  {
+	// Pattern method
+	
+	  
+  
+  }
+
   return false;
 }
 
@@ -371,6 +437,9 @@ runCrackRev2_of(void) {
 
 bool
 runCrackRev3_of(void) {
+
+  printf("Entered runCrackRev3_of\n");
+  
   uint8_t test[32], enckey[16], tmpkey[16];
   unsigned int j, length, lpasslength;
   int i;
@@ -405,36 +474,177 @@ runCrackRev3_of(void) {
 
 bool
 runCrackRev3(void) {
-  uint8_t test[16], enckey[16], tmpkey[16];
-  unsigned int j, length, lpasslength;
-  int i;
 
-  length = encdata->length/8;
-  lpasslength = 0;
+  printf("Entered runCrackRev3\n");
   startTime = time(NULL);
-  do {
-    BEGIN_CRACK_LOOP();
+  
+  
+  if (passMeth != Pattern)
+  {
+	// Wordlist or Generative  - yes this is the original
+  
+	  uint8_t test[16], enckey[16], tmpkey[16];
+	  unsigned int j, length, lpasslength;
+	  int i;
 
-    do {
-      md5(encKeyWorkSpace, ekwlen, enckey);
+	  length = encdata->length/8;
+	  lpasslength = 0;
 
-      md5_50(enckey, length);
-      memcpy(test, encdata->u_string, PARTIAL_TEST_SIZE);
+	  do {
+	    BEGIN_CRACK_LOOP();
 
-      /** Algorithm 3.5 reversed */
-      RC4_DECRYPT_REV3(PARTIAL_TEST_SIZE);
+	    do {
+	      md5(encKeyWorkSpace, ekwlen, enckey);
 
-      /** if partial test succeeds we make a full check to be sure */
-      if(unlikely(memcmp(test, rev3TestKey, PARTIAL_TEST_SIZE) == 0)) {
-	memcpy(test, encdata->u_string, length);
-	RC4_DECRYPT_REV3(length);
-	if(memcmp(test, rev3TestKey, length) == 0)
-	  return true;
-      }
+	      md5_50(enckey, length);
+	      memcpy(test, encdata->u_string, PARTIAL_TEST_SIZE);
 
-      ++nrprocessed;
-    } while(permutate());
-  } while(nextPassword());
+	      /** Algorithm 3.5 reversed */
+	      RC4_DECRYPT_REV3(PARTIAL_TEST_SIZE);
+
+	      /** if partial test succeeds we make a full check to be sure */
+	      if(unlikely(memcmp(test, rev3TestKey, PARTIAL_TEST_SIZE) == 0)) {
+		memcpy(test, encdata->u_string, length);
+		RC4_DECRYPT_REV3(length);
+		if(memcmp(test, rev3TestKey, length) == 0)
+		  return true;
+	      }
+
+	      ++nrprocessed;
+	    } while(permutate());
+	  } while(nextPassword());
+  }
+  else
+  {
+  	// Pattern
+  	
+	omp_set_num_threads(numThreads);
+  	
+  	unsigned long long int outerindex, innerindex, lastInvalidPasswordIndex, foundPasswordIndex, numberOfPaswords, lastStripeStartIndex;
+  	
+  	numberOfPaswords = getMaxPatternPasswords();
+  	
+  	if (numberOfPaswords > STRIPE_SIZE)
+	  	lastStripeStartIndex = numberOfPaswords - (numberOfPaswords % STRIPE_SIZE);
+	else
+		lastStripeStartIndex = numberOfPaswords-1;
+  	
+  	lastInvalidPasswordIndex = 0LL;
+  	foundPasswordIndex = 0LL;
+  	
+  	
+  	unsigned int j, length;
+	int i;
+	length = encdata->length/8;
+
+  	
+  	// Private fields per thread
+  	
+  	int threadId;
+  	uint8_t currentPatternPassword[PASSLENGTH+1];	// Holds pattern password of given index
+  	int currentPatternPasswordLength;
+  	
+  	uint8_t enckey[16];     // Holds md5 digest
+  	uint8_t test[16];	// Holds test key
+  	uint8_t tmpkey[16]; 	// Not sure what this does
+  	
+  	// thread's local copy of global variables
+	uint8_t localEncKeyWorkSpace[ekwlen];
+	
+	// No point initialising here - will get blanked out in parallel section
+	// memcpy(localEncKeyWorkSpace, encKeyWorkSpace, ekwlen);
+  	
+  	
+  	for (outerindex = 0; outerindex <= lastStripeStartIndex ; outerindex += STRIPE_SIZE)
+  	{
+  	
+  		// Parrallised check for given stripe  		
+  	
+  		#pragma omp parallel for    \
+  			private(innerindex, i, j, threadId, test, enckey, tmpkey, localEncKeyWorkSpace, \
+  				currentPatternPassword, currentPatternPasswordLength) \
+  			shared(outerindex, lastInvalidPasswordIndex, foundPasswordIndex)
+		for (innerindex = outerindex; innerindex < outerindex+STRIPE_SIZE ; innerindex++)
+		{
+			// Get the index password
+			currentPatternPasswordLength = 	getPatternPassword(innerindex, currentPatternPassword);		
+			if (currentPatternPasswordLength)
+			{
+
+				threadId = omp_get_thread_num();
+				//printf("Thread %i: Password %lli: %s, Length %i\n", \
+					threadId, innerindex, currentPatternPassword, currentPatternPasswordLength);
+				
+				// Check if password at index innerindex is the correct one
+				// BEGIN_CRACK_LOOP
+				
+				//currPWLen = setPassword(currPW);
+				memcpy(localEncKeyWorkSpace, encKeyWorkSpace, ekwlen);
+				memcpy(localEncKeyWorkSpace, currentPatternPassword, currentPatternPasswordLength);
+			    			
+				//if(unlikely(lpasslength != currPWLen)) 
+				{		
+					if(likely(currentPatternPasswordLength < 32))			
+						memcpy(localEncKeyWorkSpace + currentPatternPasswordLength, pad, \
+							32-currentPatternPasswordLength);	
+				   // lpasslength = currPWLen;				
+				}							
+				
+				
+				md5(localEncKeyWorkSpace, ekwlen, enckey);
+
+				md5_50(enckey, length);
+				memcpy(test, encdata->u_string, PARTIAL_TEST_SIZE);
+
+				/** Algorithm 3.5 reversed */
+				RC4_DECRYPT_REV3(PARTIAL_TEST_SIZE);
+				
+				/*
+				#define RC4_DECRYPT_REV3(n) {			\
+				    for(i = 19; i >= 0; --i) {			\
+				      for(j = 0; j < length; ++j)		\
+					tmpkey[j] = enckey[j] ^ i;		\
+				      rc4Decrypt(tmpkey, test, n, test);	\
+				    }						\
+				  }
+				*/
+
+				/** if partial test succeeds we make a full check to be sure */
+				if(unlikely(memcmp(test, rev3TestKey, PARTIAL_TEST_SIZE) == 0)) 
+				{
+					memcpy(test, encdata->u_string, length);
+					RC4_DECRYPT_REV3(length);
+					
+					// If found passsword set to break out
+					if(memcmp(test, rev3TestKey, length) == 0)
+					{
+						 #pragma omp critical
+						 {
+							foundPasswordIndex = innerindex;
+							printf("Found it at %lli !!!! *****", innerindex);
+						}
+					}
+	
+				}
+			}
+		}	// end innerindex parallel for
+
+		nrprocessed += STRIPE_SIZE;
+		
+		// Assumed that first pattern is not the password!!!!
+		
+		if (foundPasswordIndex)
+		{
+			finalPatternPasswordIndex = foundPasswordIndex;
+			return true;
+		}
+		else
+			currPatternPasswordIndex = outerindex+STRIPE_SIZE-1;
+  	}	// end outerindex
+	
+  	
+  }
+  
   return false;
 }
 
@@ -609,7 +819,7 @@ bool
 initPDFCrack(const EncData *e, const uint8_t *upw, const bool user,
 	     const char *wl, const passwordMethod pm, FILE *file,
 	     const char *cs, const char *pat, const unsigned int minPw,
-	     const unsigned int maxPw, const bool perm, const bool qt, int numthreads) {
+	     const unsigned int maxPw, const bool perm, const bool qt, const int numth) {
   uint8_t buf[128];
   unsigned int upwlen;
   uint8_t *tmp;
@@ -623,14 +833,18 @@ initPDFCrack(const EncData *e, const uint8_t *upw, const bool user,
   nrprocessed = 0;
   workWithUser = user;
   crackDone = false;
-
+  
+  // Set new vars
+  passMeth = pm;
+  numThreads = numth;
+  
   if(e->revision >= 5) {
     permutation = (perm || permutation);
     if(permutation)
       permutate = do_permutate;
     else
       permutate = no_permutate;
-    initPasswords(pm, file, wl, cs, pat, minPw, maxPw, qt, numthreads);
+    initPasswords(pm, file, wl, cs, pat, minPw, maxPw, qt, numth);
     return true;
   }
 
@@ -686,7 +900,7 @@ initPDFCrack(const EncData *e, const uint8_t *upw, const bool user,
   else
     permutate = no_permutate;
 
-  initPasswords(pm, file, wl, cs, pat, minPw, maxPw, qt, numthreads);
+  initPasswords(pm, file, wl, cs, pat, minPw, maxPw, qt, numth);
   return true;
 }
 
