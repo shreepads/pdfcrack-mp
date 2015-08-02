@@ -15,17 +15,29 @@ clean:
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -c -o $@ $+
 		
+testall: test3 test4
+
+test1: pdfcrack
+	./pdfcrack -o -c Jmy831 -n 6 -m 6 ./testpdfs/TestPDF1.pdf
+	./pdfcrack -o -t 5 -e [Jmy][Jmy][y][Jmy1234567890][831][123458] ./testpdfs/TestPDF1.pdf
+
 test3: pdfcrack
 	./pdfcrack -c Niy546 -n 6 -m 6 ./testpdfs/TestPDF3.pdf
-	./pdfcrack -t 5 -e [Niy546][Niy546][Niy546][Niy546][Niy546][Niy546] ./testpdfs/TestPDF3.pdf
+	./pdfcrack -t 5 -e [Niy][Niy][y][Niy1234567890][546][123546] ./testpdfs/TestPDF3.pdf
 	
 perftest3: pdfcrack
 	./pdfcrack -c Niy1234567890 -n 6 -m 6 ./testpdfs/TestPDF3.pdf
-	./pdfcrack -t 5 -e [Niy1234567890][Niy1234567890][Niy1234567890][Niy1234567890][Niy1234567890][Niy1234567890] ./testpdfs/TestPDF3.pdf
+	./pdfcrack -t 1 -e [Niy1234567890][Niy1234567890][Niy1234567890][Niy1234567890][Niy1234567890][Niy1234567890] ./testpdfs/TestPDF3.pdf
+	
+test4: pdfcrack
+	./pdfcrack -c Ktw810 -n 6 -m 6 ./testpdfs/TestPDF4.pdf
+	./pdfcrack -t 5 -e [Ktw][Ktw][w][Ktw1234567890][810][423810] ./testpdfs/TestPDF4.pdf
+	
+
 	
 debugold: pdfcrack
 	gdb --args ./pdfcrack -c Niy546 -n 6 -m 6 ./testpdfs/TestPDF3.pdf
 	
 debugnew: pdfcrack
-	gdb --args ./pdfcrack -t 5 -e [Niy546][Niy546][Niy546][Niy546][Niy546][Niy546] ./testpdfs/TestPDF3.pdf
+	gdb --args ./pdfcrack -t 1 -e [Niy][Niy][Niy][Niy1234567890][546][123546] ./testpdfs/TestPDF3.pdf
 	

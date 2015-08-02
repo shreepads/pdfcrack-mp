@@ -147,12 +147,12 @@ void setPatternArray(const char* pat, unsigned int patLen,
 			if (i==0)
 				passwordPatDivs[i]=1LL;
 			else
-				passwordPatDivs[i]=passwordPatLengths[i]*passwordPatDivs[i-1];
+				passwordPatDivs[i]=passwordPatLengths[i-1]*passwordPatDivs[i-1];
 				
 			i++;
 		}
 	}
-	while(strtok_r(NULL, delimiter, &scratch));
+	while((token = strtok_r(NULL, delimiter, &scratch)));
 	
 	
 	/*

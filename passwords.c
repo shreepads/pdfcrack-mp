@@ -188,10 +188,14 @@ static void setPattern(const char *pat)
 	// Convert basic format pattern into password pattern array	
 	setPatternArray(pattern, patternLen, passwordPatternArray, passwordPatternLengths, passwordPatternDivs);
 	
-	maxPatternPasswords = passwordPatternDivs[patternLen-1]*passwordPatternLengths[0];
+	maxPatternPasswords = passwordPatternDivs[patternLen-1]*passwordPatternLengths[patternLen-1];
+	//maxPatternPasswords = 0LL;
 	
 	for (unsigned int i=0; i<patternLen; i++)
 	{	
+		// Calculate max pattern passwords
+		// maxPatternPasswords += passwordPatternDivs[i]*passwordPatternLengths[i];
+		
 		printf("Pattern element %i: Value: %s, Length: %i, Divisor: %lli\n", 
 			i, passwordPatternArray[i], passwordPatternLengths[i], passwordPatternDivs[i]);
 	}
@@ -222,11 +226,13 @@ int getPatternPassword(long long int n, uint8_t* patPassword)
 	if (n >= maxPatternPasswords)
 		return 0;
 	
-	for (unsigned int i=0; i<patternLen; i++)
+	for (int i=patternLen-1; i>=0; i--)
 	{
-		int index = (n / passwordPatternDivs[i]) % passwordPatternLengths[i];
+		int index = n / passwordPatternDivs[i];
 		
 		patPassword[i] = passwordPatternArray[i][index];
+		
+		n = n % passwordPatternDivs[i];
 	}
 	
 	patPassword[patternLen] = '\0';
