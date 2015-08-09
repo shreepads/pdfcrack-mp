@@ -15,7 +15,7 @@ clean:
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -c -o $@ $+
 		
-testall: test3 test4
+testall: test1 test3 test4
 
 test1: pdfcrack
 	./pdfcrack -o -c Jmy831 -n 6 -m 6 ./testpdfs/TestPDF1.pdf
