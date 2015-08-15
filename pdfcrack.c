@@ -793,15 +793,17 @@ runCrackRev3(void) {
 					// If found passsword set to break out
 					if(memcmp(test, rev3TestKey, length) == 0)
 					{
-						 #pragma omp critical
-						 {
+					    #pragma omp critical
+						{
 							foundPasswordIndex = innerindex;
 							printf("Found it at %lli !!!! *****\n", innerindex);
 						}
 					}
 	
 				}
-			}
+				
+			}    // end if (currentPatternPassword)
+			
 		}	// end innerindex parallel for
 
 		nrprocessed += STRIPE_SIZE;
@@ -868,6 +870,7 @@ runCrackRev5(void) {
 	      /** Add the 8 byte user validation salt to pad */
 	      if(likely(currPWLen < 32))
 		memcpy(currPW + currPWLen, encdata->u_string+32, 8);
+		// 	memcpy(currPW + currPWLen, pad, 32-currPWLen);	
 	      lpasslength = currPWLen;
 	    }
 
@@ -884,6 +887,91 @@ runCrackRev5(void) {
   else
   {
 	// Pattern method  
+	
+ 	
+	omp_set_num_threads(numThreads);
+  	
+  	unsigned long long int outerindex, innerindex, lastInvalidPasswordIndex, foundPasswordIndex, numberOfPaswords, lastStripeStartIndex;
+  	
+  	numberOfPaswords = getMaxPatternPasswords();
+  	
+  	if (numberOfPaswords > STRIPE_SIZE)
+	  	lastStripeStartIndex = numberOfPaswords - (numberOfPaswords % STRIPE_SIZE);
+	else
+		lastStripeStartIndex = numberOfPaswords-1;
+  	
+  	lastInvalidPasswordIndex = 0LL;
+  	foundPasswordIndex = 0LL;
+ 	
+ 	// Thread specific variables
+ 	
+	uint8_t localEncKeyWorkSpace[ekwlen];
+
+	uint8_t enckey[32];
+	
+	
+  	int threadId;
+  	uint8_t currentPatternPassword[PASSLENGTH+1];	// Holds pattern password of given index
+  	int currentPatternPasswordLength;
+  	
+  	for (outerindex = 0; outerindex <= lastStripeStartIndex ; outerindex += STRIPE_SIZE)
+  	{
+  	
+  		// Parrallised check for given stripe  		
+  	
+  		#pragma omp parallel for    \
+  			private(innerindex, threadId, enckey, localEncKeyWorkSpace, \
+  				currentPatternPassword, currentPatternPasswordLength) \
+  			shared(outerindex, lastInvalidPasswordIndex, foundPasswordIndex)
+		for (innerindex = outerindex; innerindex < outerindex+STRIPE_SIZE ; innerindex++)
+		{
+			// Get the index password
+			currentPatternPasswordLength = 	getPatternPassword(innerindex, currentPatternPassword);		
+			if (currentPatternPasswordLength)
+			{
+
+				threadId = omp_get_thread_num();
+				//printf("Thread %i: Password %lli: %s, Length %i\n", 
+				//	threadId, innerindex, currentPatternPassword, currentPatternPasswordLength);
+				
+				//currPWLen = setPassword(currPW);
+				// This should only be done the first time around as initialisation
+				memcpy(localEncKeyWorkSpace, encKeyWorkSpace, ekwlen);
+				memcpy(localEncKeyWorkSpace, currentPatternPassword, currentPatternPasswordLength);
+				
+				//memcpy(currPW + currPWLen, encdata->u_string+32, 8);
+				memcpy(localEncKeyWorkSpace + currentPatternPasswordLength, encdata->u_string+32, 8);
+
+				//sha256f(currPW, currPWLen+8, enckey);
+				sha256f(localEncKeyWorkSpace, currentPatternPasswordLength+8, enckey);
+
+				if(memcmp(enckey, encdata->u_string, 32) == 0)
+				{
+				#pragma omp critical
+				   {
+					foundPasswordIndex = innerindex;
+					printf("Found it at %lli !!!! *****\n", innerindex);
+				   }
+				}
+	
+			}    // end if (currentPatternPassword)
+			
+		}	// end innerindex parallel for
+
+		nrprocessed += STRIPE_SIZE;
+		
+		// Assumed that first pattern is not the password!!!!
+		
+		if (foundPasswordIndex)
+		{
+			finalPatternPasswordIndex = foundPasswordIndex;
+			return true;
+		}
+		else
+			currPatternPasswordIndex = outerindex+STRIPE_SIZE-1;
+			
+  	}	// end outerindex
+
   }
   
   return false;

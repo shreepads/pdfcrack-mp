@@ -40,6 +40,11 @@ test4: pdfcrack
 test6: pdfcrack
 	./pdfcrack -c Mnv731 -n 6 -m 6 ./testpdfs/TestPDF6.pdf
 	./pdfcrack -t 5 -e [Mnv][Mnv][v][Mnv1234567890][731][731245] ./testpdfs/TestPDF6.pdf	
+
+perftest6: pdfcrack
+	./pdfcrack -c mnopqrstuvwxyz1234567890M -n 6 -m 6 ./testpdfs/TestPDF6.pdf
+	./pdfcrack -t 5 -e [mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M] ./testpdfs/TestPDF6.pdf	
+
 	
 debugold: pdfcrack
 	gdb --args ./pdfcrack -c Mnv731 -n 6 -m 6 ./testpdfs/TestPDF6.pdf
