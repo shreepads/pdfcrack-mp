@@ -849,31 +849,46 @@ runCrackRev2(void) {
 
 bool
 runCrackRev5(void) {
-  uint8_t enckey[32];
-  unsigned int lpasslength;
 
-  lpasslength = 0;
+  printf("Entered runCrackRev5\n");
   startTime = time(NULL);
-  do {
-    currPWLen = setPassword(currPW);
-    if(unlikely(lpasslength != currPWLen)) {
-      /** Add the 8 byte user validation salt to pad */
-      if(likely(currPWLen < 32))
-	memcpy(currPW + currPWLen, encdata->u_string+32, 8);
-      lpasslength = currPWLen;
-    }
 
-    do {
-      sha256f(currPW, currPWLen+8, enckey);
+  if (passMeth != Pattern)
+  {
+  	// Wordlist or Generative
 
-      if(memcmp(enckey, encdata->u_string, 32) == 0)
-	return true;
+	  uint8_t enckey[32];
+	  unsigned int lpasslength;
 
-      ++nrprocessed;
-    } while(permutate());
-  } while(nextPassword());
+	  lpasslength = 0;
+
+	  do {
+	    currPWLen = setPassword(currPW);
+	    if(unlikely(lpasslength != currPWLen)) {
+	      /** Add the 8 byte user validation salt to pad */
+	      if(likely(currPWLen < 32))
+		memcpy(currPW + currPWLen, encdata->u_string+32, 8);
+	      lpasslength = currPWLen;
+	    }
+
+	    do {
+	      sha256f(currPW, currPWLen+8, enckey);
+
+	      if(memcmp(enckey, encdata->u_string, 32) == 0)
+		return true;
+
+	      ++nrprocessed;
+	    } while(permutate());
+	  } while(nextPassword());
+  }
+  else
+  {
+	// Pattern method  
+  }
+  
   return false;
 }
+
 
 bool
 runCrackRev5_o(void) {
