@@ -1,3 +1,15 @@
+Test password-protected PDFs, for testing with pdfcrack_mp, an OpenMP based fork of pdfcrack.
+See: https://github.com/shreepads/pdfcrack_mp
+
+These documents are (c) Shreepad Shukla 2015
+
+These documents are licensed under the Creative Commons Attribution-ShareAlike 4.0 International
+License. See http://creativecommons.org/licenses/by-sa/4.0/
+
+
+Details of the test PDFS are as follows:
+
+
 TestPDF0.pdf
 	No password, master document from which all the following password protected ones were created
 
@@ -35,6 +47,9 @@ TestPDF6.pdf
 	Owner Password: password
 
 
-7. AES 256: u: Hdo256, Nzd695
+TestPDF7.pdf - yet to be created
+	Revision 5 (AES 256)
+	User Password: Hdo256
+	Owner Password:  Nzd695
 
 
