@@ -356,28 +356,139 @@ bool
 runCrackRev2_o(void) {
 
   printf("Entered runCrackRev2_o\n");
-
-  uint8_t enckey[16];
-  unsigned int lpasslength;
-
-  lpasslength = 0;
   startTime = time(NULL);
-  do {
-    BEGIN_CRACK_LOOP();
+
+  if (passMeth != Pattern)
+  {
+  	  // Generative or Wordlist
+  	
+	  uint8_t enckey[16];
+	  unsigned int lpasslength;
+
+	  lpasslength = 0;
+	  
+	  do {
+	    BEGIN_CRACK_LOOP();
+	  
+	    do {
+	      md5(currPW, 32, enckey);
+
+	      rc4Decrypt(enckey, encdata->o_string, 32, encKeyWorkSpace);
+	      md5(encKeyWorkSpace, ekwlen, enckey);
+	      if(rc4Match40b(enckey, encdata->u_string, pad)) {
+		memcpy(password_user, encKeyWorkSpace, 32);
+		return true;
+	      }
+
+	      ++nrprocessed;
+	    } while(permutate());
+	  } while(nextPassword());
+  }
+  else
+  {
+  	// Pattern method
+
+	omp_set_num_threads(numThreads);
+  	
+  	unsigned long long int outerindex, innerindex, lastInvalidPasswordIndex, foundPasswordIndex, numberOfPaswords, lastStripeStartIndex;
+  	
+  	numberOfPaswords = getMaxPatternPasswords();
+  	
+  	if (numberOfPaswords > STRIPE_SIZE)
+	  	lastStripeStartIndex = numberOfPaswords - (numberOfPaswords % STRIPE_SIZE);
+	else
+		lastStripeStartIndex = numberOfPaswords-1;
+  	
+  	lastInvalidPasswordIndex = 0LL;
+  	foundPasswordIndex = 0LL;
+ 	
+ 	// Thread specific variables
+ 	
+	uint8_t localEncKeyWorkSpace[ekwlen];
+
+	uint8_t enckey[16];
+	
+  	int threadId;
+  	uint8_t currentPatternPassword[PASSLENGTH+1];	// Holds pattern password of given index
+  	int currentPatternPasswordLength;
+
+  	for (outerindex = 0; outerindex <= lastStripeStartIndex ; outerindex += STRIPE_SIZE)
+  	{
+  	
+  		// Parrallised check for given stripe  		
+  	
+  		#pragma omp parallel for    \
+  			private(innerindex, threadId, enckey, localEncKeyWorkSpace, \
+  				currentPatternPassword, currentPatternPasswordLength) \
+  			shared(outerindex, lastInvalidPasswordIndex, foundPasswordIndex)
+		for (innerindex = outerindex; innerindex < outerindex+STRIPE_SIZE ; innerindex++)
+		{
+			// Get the index password
+			currentPatternPasswordLength = 	getPatternPassword(innerindex, currentPatternPassword);		
+			if (currentPatternPasswordLength)
+			{
+
+				threadId = omp_get_thread_num();
+				//printf("Thread %i: Password %lli: %s, Length %i\n", 
+				//	threadId, innerindex, currentPatternPassword, currentPatternPasswordLength);
+				
+				//currPWLen = setPassword(currPW);
+				// This should only be done the first time around as initialisation
+				memcpy(localEncKeyWorkSpace, encKeyWorkSpace, ekwlen);
+				memcpy(localEncKeyWorkSpace, currentPatternPassword, currentPatternPasswordLength);
+
+				//if(unlikely(lpasslength != currPWLen)) 
+				{		
+					if(likely(currentPatternPasswordLength < 32))			
+						memcpy(localEncKeyWorkSpace + currentPatternPasswordLength, pad, \
+							32-currentPatternPasswordLength);	
+				   // lpasslength = currPWLen;				
+				}
+
+				//md5(currPW, 32, enckey);
+				md5(localEncKeyWorkSpace, 32, enckey);
+				
+				//rc4Decrypt(enckey, encdata->o_string, 32, encKeyWorkSpace);
+				rc4Decrypt(enckey, encdata->o_string, 32, localEncKeyWorkSpace);
+				
+				//md5(encKeyWorkSpace, ekwlen, enckey);
+				md5(localEncKeyWorkSpace, ekwlen, enckey);
+
+				//if(rc4Match40b(enckey, encdata->u_string, pad))
+				
+				if(rc4Match40b(enckey, encdata->u_string, pad))
+				{
+				#pragma omp critical
+				   {
+					foundPasswordIndex = innerindex;
+					printf("Found it at %lli !!!! *****\n", innerindex);
+					
+					//memcpy(password_user, encKeyWorkSpace, 32)
+					memcpy(password_user, localEncKeyWorkSpace, 32);
+				   }				
+				}
+
+			}   // if valid currentPatternPassword	
+			
+		}  // for innerindex
+		
+		nrprocessed += STRIPE_SIZE;
+		
+		// Assumed that first pattern is not the password!!!!
+		
+		if (foundPasswordIndex)
+		{
+			finalPatternPasswordIndex = foundPasswordIndex;
+			return true;
+		}
+		else
+			currPatternPasswordIndex = outerindex+STRIPE_SIZE-1;
+			
+	}  // for outerindex
+  	
+  	
+  }
   
-    do {
-      md5(currPW, 32, enckey);
-
-      rc4Decrypt(enckey, encdata->o_string, 32, encKeyWorkSpace);
-      md5(encKeyWorkSpace, ekwlen, enckey);
-      if(rc4Match40b(enckey, encdata->u_string, pad)) {
-	memcpy(password_user, encKeyWorkSpace, 32);
-	return true;
-      }
-
-      ++nrprocessed;
-    } while(permutate());
-  } while(nextPassword());
   return false;
 }
 
@@ -550,7 +661,7 @@ runCrackRev3_o(void) {
 						if(memcmp(usertest, rev3TestKey, userlength) == 0)
 						{
 							// Record success
-							#pragma omp critical
+						   #pragma omp critical
 							{
 								foundPasswordIndex = innerindex;
 								printf("Found it at %lli !!!! *****\n", innerindex);
