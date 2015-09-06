@@ -47,7 +47,7 @@ TestPDF6.pdf
 	Owner Password: password
 
 
-TestPDF7.pdf - yet to be created
+TestPDF7.pdf - yet to be created - using TestPDF6.pdf instead
 	Revision 5 (AES 256)
 	User Password: Hdo256
 	Owner Password:  Nzd695

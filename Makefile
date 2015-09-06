@@ -17,9 +17,9 @@ clean:
 		
 testall: test perftest
 
-test: test2 test5 test1 test3 test4 test6
+test: test2 test5 test1 test3 test4 test6 test7
 
-perftest: perftest2 perftest5 perftest1 perftest3 perftest4 perftest6
+perftest: perftest2 perftest5 perftest1 perftest3 perftest4 perftest6 perftest7
 
 test1: pdfcrack
 	@echo ""
@@ -174,6 +174,8 @@ perftest5: pdfcrack
 	@echo "=============="
 	./pdfcrack -o -t 5 -e [Rkz1234567890abcdefijl][Rkz1234567890abcdefijl][Rkz1234567890abcdefijl][Rkz1234567890abcdefijl][Rkz1234567890abcdefijl][Rkz1234567890abcdefijl] ./testpdfs/TestPDF5.pdf
 
+
+
 test6: pdfcrack
 	@echo ""
 	@echo "---------------------------------------------"
@@ -188,6 +190,7 @@ test6: pdfcrack
 	@echo "--------------"
 	./pdfcrack -t 5 -e [Mnv][Mnv][v][Mnv1234567890][731][731245] ./testpdfs/TestPDF6.pdf	
 
+
 perftest6: pdfcrack
 	@echo ""
 	@echo "================================================"
@@ -201,6 +204,37 @@ perftest6: pdfcrack
 	@echo "Pattern method"
 	@echo "=============="
 	./pdfcrack -t 5 -e [mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M][mnopqrstuvwxyz1234567890M] ./testpdfs/TestPDF6.pdf	
+
+
+
+test7: pdfcrack
+	@echo ""
+	@echo "---------------------------------------------"
+	@echo "Testing Rev5 (AES 256) owner password"
+	@echo "---------------------------------------------"
+	@echo ""
+	@echo "Generative method"
+	@echo "-----------------"
+	./pdfcrack -o -c pasword -n 8 -m 8 ./testpdfs/TestPDF6.pdf
+	@echo ""
+	@echo "Pattern method"
+	@echo "--------------"
+	./pdfcrack -o -t 5 -e [paswo][paswo][pas][s][wor1234567890][sword][sword][d] ./testpdfs/TestPDF6.pdf	
+
+
+perftest7: pdfcrack
+	@echo ""
+	@echo "================================================"
+	@echo "Performance testing Rev5 (AES 256) owner password"
+	@echo "================================================"
+	@echo ""
+	@echo "Generative method"
+	@echo "================="
+	./pdfcrack -o -c paswor123d -n 8 -m 8 ./testpdfs/TestPDF6.pdf
+	@echo ""
+	@echo "Pattern method"
+	@echo "=============="
+	./pdfcrack -o -t 5 -e [paswor123d][paswor123d][paswor123d][paswor123d][paswor123d][paswor123d][paswor123d][paswor123d] ./testpdfs/TestPDF6.pdf	
 
 	
 debugold: pdfcrack

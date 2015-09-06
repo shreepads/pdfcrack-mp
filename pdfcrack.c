@@ -1202,31 +1202,134 @@ runCrackRev5(void) {
 
 bool
 runCrackRev5_o(void) {
-  uint8_t enckey[32];
-  unsigned int lpasslength;
 
-  lpasslength = 0;
+  printf("Entered runCrackRev5_o\n");
   startTime = time(NULL);
-  do {
-    currPWLen = setPassword(currPW);
-    if(unlikely(lpasslength != currPWLen)) {
-      /** Add the 8 byte user validation and 48 byte u-key salt to pad */
-      if(likely(currPWLen < 32)) {
-	memcpy(currPW + currPWLen, encdata->o_string+32, 8);
-       	memcpy(currPW + currPWLen+8, encdata->u_string, 48);
-      }
-      lpasslength = currPWLen;
-    }
+  
+  if (passMeth != Pattern)
+  {  
+	  // Generative or Wordlist
+	  
+	  uint8_t enckey[32];
+	  unsigned int lpasslength;
 
-    do {
-      sha256(currPW, currPWLen+56, enckey);
+	  lpasslength = 0;
 
-      if(memcmp(enckey, encdata->o_string, 32) == 0)
-	return true;
+	  do {
+	    currPWLen = setPassword(currPW);
+	    if(unlikely(lpasslength != currPWLen)) {
+	      /** Add the 8 byte user validation and 48 byte u-key salt to pad */
+	      if(likely(currPWLen < 32)) {
+		memcpy(currPW + currPWLen, encdata->o_string+32, 8);
+	       	memcpy(currPW + currPWLen+8, encdata->u_string, 48);
+	      }
+	      lpasslength = currPWLen;
+	    }
 
-      ++nrprocessed;
-    } while(permutate());
-  } while(nextPassword());
+	    do {
+	      sha256(currPW, currPWLen+56, enckey);
+
+	      if(memcmp(enckey, encdata->o_string, 32) == 0)
+		return true;
+
+	      ++nrprocessed;
+	    } while(permutate());
+	  } while(nextPassword());
+  }
+  else
+  {
+  	// Pattern method
+
+	omp_set_num_threads(numThreads);
+  	
+  	unsigned long long int outerindex, innerindex, lastInvalidPasswordIndex, foundPasswordIndex, numberOfPaswords, lastStripeStartIndex;
+  	
+  	numberOfPaswords = getMaxPatternPasswords();
+  	
+  	if (numberOfPaswords > STRIPE_SIZE)
+	  	lastStripeStartIndex = numberOfPaswords - (numberOfPaswords % STRIPE_SIZE);
+	else
+		lastStripeStartIndex = numberOfPaswords-1;
+  	
+  	lastInvalidPasswordIndex = 0LL;
+  	foundPasswordIndex = 0LL;
+ 	
+ 	// Thread specific variables
+ 	
+	uint8_t localEncKeyWorkSpace[ekwlen];
+
+	uint8_t enckey[32];
+	
+	
+  	int threadId;
+  	uint8_t currentPatternPassword[PASSLENGTH+1];	// Holds pattern password of given index
+  	int currentPatternPasswordLength;
+  	
+  	for (outerindex = 0; outerindex <= lastStripeStartIndex ; outerindex += STRIPE_SIZE)
+  	{
+  	
+  		// Parrallised check for given stripe  		
+  	
+  		#pragma omp parallel for    \
+  			private(innerindex, threadId, enckey, localEncKeyWorkSpace, \
+  				currentPatternPassword, currentPatternPasswordLength) \
+  			shared(outerindex, lastInvalidPasswordIndex, foundPasswordIndex)
+		for (innerindex = outerindex; innerindex < outerindex+STRIPE_SIZE ; innerindex++)
+		{
+			// Get the index password
+			currentPatternPasswordLength = 	getPatternPassword(innerindex, currentPatternPassword);		
+			if (currentPatternPasswordLength)
+			{
+
+				threadId = omp_get_thread_num();
+				//printf("Thread %i: Password %lli: %s, Length %i\n", 
+				//	threadId, innerindex, currentPatternPassword, currentPatternPasswordLength);
+				
+				//currPWLen = setPassword(currPW);
+				// This should only be done the first time around as initialisation
+				memcpy(localEncKeyWorkSpace, encKeyWorkSpace, ekwlen);
+				memcpy(localEncKeyWorkSpace, currentPatternPassword, currentPatternPasswordLength);
+				
+				
+				// memcpy(currPW + currPWLen, encdata->o_string+32, 8);
+				memcpy(localEncKeyWorkSpace + currentPatternPasswordLength, encdata->o_string+32, 8);
+				
+				// memcpy(currPW + currPWLen+8, encdata->u_string, 48);
+				memcpy(localEncKeyWorkSpace + currentPatternPasswordLength + 8, encdata->u_string, 48);
+
+				//sha256(currPW, currPWLen+56, enckey);
+				sha256(localEncKeyWorkSpace, currentPatternPasswordLength+56, enckey);
+
+				if(memcmp(enckey, encdata->o_string, 32) == 0)
+				{
+				#pragma omp critical
+				   {
+					foundPasswordIndex = innerindex;
+					printf("Found it at %lli !!!! *****\n", innerindex);
+				   }
+				}
+	
+			}    // end if (currentPatternPassword)
+			
+		}	// end innerindex parallel for
+
+		nrprocessed += STRIPE_SIZE;
+		
+		// Assumed that first pattern is not the password!!!!
+		
+		if (foundPasswordIndex)
+		{
+			finalPatternPasswordIndex = foundPasswordIndex;
+			return true;
+		}
+		else
+			currPatternPasswordIndex = outerindex+STRIPE_SIZE-1;
+			
+  	}	// end outerindex
+
+  
+  }
+  
   return false;
 }
 
