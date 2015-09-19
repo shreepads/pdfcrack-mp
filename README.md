@@ -9,5 +9,5 @@ Branches
 * other branches - for specific issues found in the issue log
 
 Please note that I have no plans to multi-core enable the standard Generative/ Wordlist methods found in pdfcrack, but aim to cover these as part of the Pattern method.
-* Generative method covered: Single range in Pattern method done in regexrange branch
+* Generative method covered: Single range in Pattern method done in regexrange branch: See Issue #4
 * Wordlist method: See Issue # 7
