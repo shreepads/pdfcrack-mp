@@ -17,6 +17,10 @@
  * USA.
  *
  */
+
+
+// Char used to indicate optional pattern char value
+#define OPTPATCHAR '\t'
  
 char* parsePattern(const char* pat);
  

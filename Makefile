@@ -236,7 +236,32 @@ perftest7: pdfcrack
 	@echo "=============="
 	./pdfcrack -o -t 5 -e [paswor123d][paswor123d][paswor123d][paswor123d][paswor123d][paswor123d][paswor123d][paswor123d] ./testpdfs/TestPDF6.pdf	
 
+
+
+testrange: pdfcrack
+	@echo ""
+	@echo "---------------------------------------------"
+	@echo "Testing Ranges (using Rev5 user password)"
+	@echo "---------------------------------------------"
+	@echo ""
+	@echo "Test 1: Min, Max"
+	@echo "----------------"
+	./pdfcrack -t 5 -e "{2,4}[Mnv][Mnv1234567890][731][731245]" ./testpdfs/TestPDF6.pdf	
+	@echo ""
+	@echo "Test 2: No min, Max"
+	@echo "-------------------"
+	./pdfcrack -t 5 -e "[Mnv][Mnv]{,5}[Mnv1234567890]" ./testpdfs/TestPDF6.pdf	
+	@echo ""
+	@echo "Test 3: Min=Max"
+	@echo "---------------"
+	./pdfcrack -t 5 -e "[Mnv][Mnv]{3,3}[Mnv1234567890][731245]" ./testpdfs/TestPDF6.pdf	
+	@echo ""
+	@echo "Test 4: Perf test"
+	@echo "-----------------"
+	./pdfcrack -t 5 -e "{4,8}[Mnv1234567890]" ./testpdfs/TestPDF6.pdf	
 	
+
+
 debugold: pdfcrack
 	gdb --args ./pdfcrack -c Mnv731 -n 6 -m 6 ./testpdfs/TestPDF6.pdf
 	

@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "passwords.h"
+#include "pattern.h"
 
 
 // static variables and functions to handle password patterns
@@ -57,6 +58,8 @@ static const char* spaceliteral = ":space:";
 
 */
 
+
+
 // Validate pattern
 
 int validPattern(const char* pat)
@@ -65,6 +68,100 @@ int validPattern(const char* pat)
 		return 0;
 		
 	return 1;
+}
+
+
+// Replace ranges in the {n,m} format as per Issue #4
+// See https://github.com/shreepads/pdfcrack-mp/issues/4
+char* replaceRanges(char* pat)
+{
+	if (!pat)
+		return NULL;
+		
+	// Check if there are any ranges, if not return original pattern
+	if (!strchr(pat, '}'))
+		return pat;
+	
+	// For each occurence of a range {min,max}, pick up the following [] and replace it multiple times
+	// Obviously this can be much improved by someone with better knowledge of C string hanlding
+	char *rangestart = strchr(pat, '{');
+	rangestart++;
+	
+	char *rangemid = strchr(rangestart, ',');
+	rangemid++;
+	
+	char* rangeend = strchr(rangemid, '}');
+	
+	char minstr[rangemid - rangestart];
+	strncpy(minstr, rangestart, rangemid - rangestart - 1);
+	minstr[rangemid - rangestart - 1] = '\0';
+	
+	char maxstr[rangeend - rangemid + 1];
+	strncpy(maxstr, rangemid, rangeend - rangemid);
+	maxstr[rangeend - rangemid + 1] = '\0';
+	
+	//printf("Maxstr: %s; Minstr: %s;\n", maxstr, minstr);
+	
+	long int max = strtol(maxstr, NULL, 10);
+	long int min = strtol(minstr, NULL, 10);
+	
+	// Validate max and min limits - assume that validatePattern only validates structurally
+	if ( (max < 0)  ||  (min < 0)  ||  (min > max)  || (max > PASSLENGTH) )
+	{
+		printf("Invalid Range: max=%li, min=%li:\n", max, min);
+		return NULL;
+	}
+	
+	//printf("Max: %li; Min: %li;\n", max, min);
+	
+	char *patstart = rangeend + 1;
+	char *patend = strchr(rangeend, ']');
+	
+	char rangepat[patend - patstart + 2];
+	strncpy(rangepat, patstart, patend - patstart + 1);
+	rangepat[patend - patstart + 1] = '\0';
+	
+	// Alternate pattern with optional char
+	char rangepatopt[strlen(rangepat) + 2];
+	memcpy(rangepatopt, rangepat, strlen(rangepat) - 1);
+	rangepatopt[strlen(rangepat) - 1] = OPTPATCHAR;
+	rangepatopt[strlen(rangepat)] = ']';
+	rangepatopt[strlen(rangepat) + 1] = '\0';
+	
+	//printf("Pat:%s; Optpat:%s;\n", rangepat, rangepatopt);
+	
+	char newPattern[strlen(pat) + (strlen(rangepatopt) * max)];
+	newPattern[strlen(pat) + (strlen(rangepatopt) * max) - 1] = '\0';
+	char *newPatternPtr = newPattern;
+	
+	memcpy(newPatternPtr, pat, (rangestart - pat - 1));
+	newPatternPtr += rangestart - pat - 1;
+	
+	//printf("Newpat:%s;\n", newPattern);
+	
+	for (int i=0; i<min; i++)
+	{
+		memcpy(newPatternPtr, rangepat, strlen(rangepat));
+		newPatternPtr += strlen(rangepat);
+	}
+	
+	//printf("Newpat:%s;\n", newPattern);
+		
+	for (int j=min; j<max; j++)
+	{
+		memcpy(newPatternPtr, rangepatopt, strlen(rangepatopt));
+		newPatternPtr += strlen(rangepatopt);
+	}
+	
+	//printf("Newpat:%s;\n", newPattern);
+	
+	strcpy(newPatternPtr, (patend + 1));
+	
+	//printf("Newpat:%s;\n", newPattern);
+	
+	char *rangeReplacedPat = strdup(newPattern);
+	
+	return rangeReplacedPat;
 }
 
 
@@ -96,8 +193,7 @@ char* parsePattern(const char* pat)
 	if (!validPattern(pat))
 		return NULL;
 	
-	// Replace repeated occurences
-	//uint8_t* parsedPattern = 
+	// Replace repeated occurences - Not needed, will be handled as part of ranges
 	
 	// Replace types
 	
@@ -105,8 +201,7 @@ char* parsePattern(const char* pat)
 	// Replace NOT operator
 	
 	// Replace ranges
-	
-	parsedPattern = pat;
+	parsedPattern = replaceRanges((char *) pat);
 	
 	return parsedPattern;
 }

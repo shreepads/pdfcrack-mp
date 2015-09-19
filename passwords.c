@@ -228,18 +228,38 @@ int getPatternPassword(long long int n, uint8_t* patPassword)
 	if (n >= maxPatternPasswords)
 		return 0;
 	
+	// Temp stuff - to be deleted
+	//for (int i=0; i<patternLen-1; i++)
+	//	patPassword[i] = '&';
+	//patPassword[patternLen-1] = '\0';
+	
+	int pos = patternLen-1;
+	
 	for (int i=patternLen-1; i>=0; i--)
 	{
 		int index = n / passwordPatternDivs[i];
 		
-		patPassword[i] = passwordPatternArray[i][index];
+		if (passwordPatternArray[i][index] != OPTPATCHAR)
+		{
+			patPassword[pos] = passwordPatternArray[i][index];
+			pos--;
+		}
 		
 		n = n % passwordPatternDivs[i];
 	}
 	
-	patPassword[patternLen] = '\0';
+
+	//printf("prePatPassword:%s; pos:%i\n", patPassword, pos);
 	
-	return patternLen;
+	if (pos != -1)
+	{
+		// Need to move the pattern password to the left to handle optional char
+		memmove(patPassword, patPassword+pos+1, patternLen-pos-1);
+	}
+	
+	patPassword[patternLen-pos-1] = '\0';
+	
+	return (patternLen-pos-1);
 }
 
 
