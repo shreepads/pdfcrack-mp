@@ -277,6 +277,25 @@ testmultirange: pdfcrack
 	./pdfcrack -t 5 -e "{2,4}[Mnv]{,2}[Mnv1234567890]{3,4}[1234567890]" ./testpdfs/TestPDF6.pdf	
 	
 
+testcharclass: pdfcrack
+	@echo ""
+	@echo "----------------------------------------------------"
+	@echo "Testing Character Classes (using Rev5 user password)"
+	@echo "----------------------------------------------------"
+	@echo ""
+	@echo "Test 1: Single class"
+	@echo "--------------------"
+	./pdfcrack -t 5 -e "[Mnv][:lower:][v][731][731][731]" ./testpdfs/TestPDF6.pdf	
+	@echo ""
+	@echo "Test 2: Multiple classes"
+	@echo "------------------------"
+	./pdfcrack -t 5 -e "[:upper:][:alpha:][:lower:][731][:digit:][:alnum:]" ./testpdfs/TestPDF6.pdf	
+	@echo ""
+	@echo "Test 3: Multiple classes, with ranges"
+	@echo "-------------------------------------"
+	./pdfcrack -t 5 -e "[:upper:]{1,2}[:lower:]{2,3}[:digit:]" ./testpdfs/TestPDF6.pdf	
+
+
 
 debugold: pdfcrack
 	gdb --args ./pdfcrack -c Mnv731 -n 6 -m 6 ./testpdfs/TestPDF6.pdf

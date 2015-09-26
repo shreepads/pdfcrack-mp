@@ -25,8 +25,36 @@
 #include "passwords.h"
 #include "pattern.h"
 
+#define NUMBERCLASSES 6
+#define MAXCLASSCHARS 200
 
 // static variables and functions to handle password patterns
+static const char characterClassLiterals[NUMBERCLASSES][2][MAXCLASSCHARS] = {
+	{
+		":alnum:",
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	},
+	{
+		":alpha:",
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	},
+	{
+		":digit:",
+		"0123456789"
+	},
+	{
+		":lower:",
+		"abcdefghijklmnopqrstuvwxyz"
+	},
+	{
+		":upper:",
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	},
+	{
+		":punct:",
+		"!\"#$%&'()*+,./:;<=>?@^_`|~-"
+	}
+};
 
 /*
 static const uint8_t
@@ -71,12 +99,86 @@ int validPattern(const char* pat)
 }
 
 
+/**
+ * str_replace.c implements a str_replace PHP like function
+ * Copyright (C) 2010  chantra <chantra__A__debuntu__D__org>
+ */
+// Replace all occurences of a string in another string
+// From http://coding.debuntu.org/c-implementing-str_replace-replace-all-occurrences-substring 
+char *
+str_replace ( const char *string, const char *substr, const char *replacement )
+{
+      char *tok = NULL;
+      char *newstr = NULL;
+      char *oldstr = NULL;
+      char *head = NULL;
+     
+      /* if either substr or replacement is NULL, duplicate string a let caller handle it */
+      if ( substr == NULL || replacement == NULL ) return strdup (string);
+      newstr = strdup (string);
+      head = newstr;
+
+      while ( (tok = strstr ( head, substr ))){
+		oldstr = newstr;
+		newstr = malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
+		/*failed to alloc mem, free old string and return NULL */
+		if ( newstr == NULL ){
+		  free (oldstr);
+		  return NULL;
+		}
+		memcpy ( newstr, oldstr, tok - oldstr );
+		memcpy ( newstr + (tok - oldstr), replacement, strlen ( replacement ) );
+		memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
+		memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
+		/* move back head right after the last replacement */
+		head = newstr + (tok - oldstr) + strlen( replacement );
+		free (oldstr);
+      }
+      
+      return newstr;
+}
+
+
+
+// Replace character classes in the :class: format as per Issue #3
+// See https://github.com/shreepads/pdfcrack-mp/issues/3
+char* replaceClasses(char* pat)
+{
+	if (!pat)
+		return NULL;
+		
+	// Check if there are any classes
+	if (!strchr(pat, ':'))
+		return pat;
+
+
+	char *classReplacedPat = pat;
+	
+	for (int i=0; i<NUMBERCLASSES; i++)
+	{
+		//printf("Replacing %s with %s in %s\n", 
+		//	characterClassLiterals[i][0], characterClassLiterals[i][1], classReplacedPat);
+		
+		classReplacedPat = str_replace(classReplacedPat, 
+			characterClassLiterals[i][0], characterClassLiterals[i][1]);
+		
+		//printf("New string %s\n", classReplacedPat);
+	}
+
+	return classReplacedPat;
+}
+
+
 // Replace ranges in the {n,m} format as per Issue #4
 // See https://github.com/shreepads/pdfcrack-mp/issues/4
 char* replaceRanges(char* pat)
 {
 	if (!pat)
 		return NULL;
+
+	// Check if there are any ranges
+	if (!strchr(pat, '}'))
+		return pat;
 		
 	
 	// For each occurence of a range {min,max}, pick up the following [] and replace it multiple times
@@ -197,6 +299,7 @@ unsigned int patternLength(const char* pat)
 
 char* parsePattern(const char* pat)
 {
+	char* declassedPattern = NULL;
 	char* parsedPattern = NULL;
 	
 	if (!pat)
@@ -208,13 +311,16 @@ char* parsePattern(const char* pat)
 	
 	// Replace repeated occurences - Not needed, will be handled as part of ranges
 	
-	// Replace types
-	
+	// Replace character classes
+	declassedPattern = replaceClasses((char *) pat);
+	printf("De-classed pattern: %s\n", declassedPattern);
 	
 	// Replace NOT operator
 	
 	// Replace ranges
-	parsedPattern = replaceRanges((char *) pat);
+	parsedPattern = replaceRanges(declassedPattern);
+	
+	//printf("Parsed pattern: %s\n", parsedPattern);
 	
 	return parsedPattern;
 }
@@ -231,7 +337,7 @@ void setPatternArray(const char* pat, unsigned int patLen,
 	strncpy(tokPat, &pat[1], strlen(pat)-2);
 	tokPat[strlen(pat)-2] = '\0';
 	
-	printf("tokPat: %s\n", tokPat);
+	//printf("tokPat: %s\n", tokPat);
 	
 	
 	// Use string tokenizer with separator ][ to pick individual charsets
@@ -261,22 +367,6 @@ void setPatternArray(const char* pat, unsigned int patLen,
 		}
 	}
 	while((token = strtok_r(NULL, delimiter, &scratch)));
-	
-	
-	/*
-	for (unsigned long long int i=0; i<patLen; i++)
-	{
-	
-		passwordPatArray[i] = "Niy546";
-		
-		 passwordPatLengths[i] = strlen((char *) passwordPatArray[i]);
-		 
-		 if (i==0)
-		 	passwordPatDivs[i]=1LL;
-		 else
-		 	passwordPatDivs[i]=passwordPatLengths[i]*passwordPatDivs[i-1];
-	}
-	*/
 	
 	return;
 	
