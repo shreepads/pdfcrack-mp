@@ -256,9 +256,25 @@ testrange: pdfcrack
 	@echo "---------------"
 	./pdfcrack -t 5 -e "[Mnv][Mnv]{3,3}[Mnv1234567890][731245]" ./testpdfs/TestPDF6.pdf	
 	@echo ""
-	@echo "Test 4: Perf test"
-	@echo "-----------------"
+	@echo "Test 4: Perf test, single range"
+	@echo "-------------------------------"
 	./pdfcrack -t 5 -e "{4,8}[Mnv1234567890]" ./testpdfs/TestPDF6.pdf	
+	
+
+	
+testmultirange: pdfcrack
+	@echo ""
+	@echo "---------------------------------------------"
+	@echo "Testing Multiple Ranges (using Rev5 user password)"
+	@echo "---------------------------------------------"
+	@echo ""
+	@echo "Test 1: Multiple ranges"
+	@echo "-----------------------"
+	./pdfcrack -t 5 -e "{2,4}[Mnv]{1,3}[Mnv1234567890]" ./testpdfs/TestPDF6.pdf	
+	@echo ""
+	@echo "Test 2: Perf test, multiple ranges"
+	@echo "----------------------------------"
+	./pdfcrack -t 5 -e "{2,4}[Mnv]{,2}[Mnv1234567890]{3,4}[1234567890]" ./testpdfs/TestPDF6.pdf	
 	
 
 
