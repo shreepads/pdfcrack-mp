@@ -280,21 +280,21 @@ testmultirange: pdfcrack
 testcharclass: pdfcrack
 	@echo ""
 	@echo "----------------------------------------------------"
-	@echo "Testing Character Classes (using Rev5 user password)"
+	@echo "Testing Character Classes (using Rev2 user password)"
 	@echo "----------------------------------------------------"
 	@echo ""
-	@echo "Test 1: Single class"
-	@echo "--------------------"
-	./pdfcrack -t 5 -e "[Mnv][:lower:][v][731][731][731]" ./testpdfs/TestPDF6.pdf	
+	@echo "Test 1: Single class (:any:)"
+	@echo "----------------------------"
+	./pdfcrack -t 5 -e "[Hdo][:any:][o][25^][25^][25^]" ./testpdfs/TestPDF7.pdf	
 	@echo ""
 	@echo "Test 2: Multiple classes"
 	@echo "------------------------"
-	./pdfcrack -t 5 -e "[:upper:][:alpha:][:lower:][731][:digit:][:alnum:]" ./testpdfs/TestPDF6.pdf	
+	./pdfcrack -t 5 -e "[:upper:][:alpha:][:lower:][:alnum:]][:digit:][:punct:]" ./testpdfs/TestPDF7.pdf	
 	@echo ""
 	@echo "Test 3: Multiple classes, with ranges"
 	@echo "-------------------------------------"
-	./pdfcrack -t 5 -e "[:upper:]{1,2}[:lower:]{2,3}[:digit:]" ./testpdfs/TestPDF6.pdf	
-
+	./pdfcrack -t 5 -e "[:upper:]{1,2}[:lower:]{2,3}[:digit:][:punct:]" ./testpdfs/TestPDF7.pdf	
+	
 
 
 debugold: pdfcrack

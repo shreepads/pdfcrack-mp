@@ -25,11 +25,15 @@
 #include "passwords.h"
 #include "pattern.h"
 
-#define NUMBERCLASSES 6
+#define NUMBERCLASSES 7
 #define MAXCLASSCHARS 200
 
 // static variables and functions to handle password patterns
 static const char characterClassLiterals[NUMBERCLASSES][2][MAXCLASSCHARS] = {
+	{
+		":any:",
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!\"#$%&'()*+,./:;<=>?@^_`|~-"
+	},
 	{
 		":alnum:",
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
