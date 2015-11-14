@@ -109,9 +109,29 @@ printProgress(void) {
   else
   {
   	uint8_t currPatternPassword[PASSLENGTH+1];
+  	unsigned long long int patternPasswordsLeft = getMaxPatternPasswords() - currPatternPasswordIndex;
+  	
+  	//printf("nrprocessed: %d  ;  getMaxPatternPasswords: %lli  ;  currPatternPasswordIndex: %lli  ; \
+  	//	patternPasswordsLeft: %lli  ;  difftime: %f\n",
+  	//	nrprocessed, getMaxPatternPasswords(), currPatternPasswordIndex,
+  	//	patternPasswordsLeft, difftime(currentTime,startTime));
+  	
+  	double maxTimeLeftInSecs = (patternPasswordsLeft * difftime(currentTime,startTime))/nrprocessed;
+  	int maxTimeSecs = (int) maxTimeLeftInSecs % 60;
+  	int maxTimeMins = (int) maxTimeLeftInSecs / 60;
+  	int maxTimeHrs = maxTimeMins / 60;
+  	int maxTimeDays = maxTimeHrs / 24;
+  	maxTimeMins = maxTimeMins % 60;
+  	maxTimeHrs = maxTimeHrs % 24;
 			
 	if (getPatternPassword(currPatternPasswordIndex, currPatternPassword))
-		printf("Current Pattern Word: '%s'\n",currPatternPassword);
+	{
+		printf("Current Pattern Word: '%s'. ",currPatternPassword);
+		//printf("Estimated max time to complete: %f secs. ", maxTimeLeftInSecs);
+		printf("Estimated max time to complete: %d days %02d:%02d:%02d\n", 
+			maxTimeDays, maxTimeHrs, maxTimeMins, maxTimeSecs);
+	}	
+	
   }
   
   fflush(stdout);
