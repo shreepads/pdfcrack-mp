@@ -11,6 +11,7 @@ pdfreader: pdfparser.o pdfreader.o common.o
 
 clean:
 	rm -f pdfcrack pdfreader testreader savedstate.sav *.o test*.txt
+	rm -f ./testpdfs/testpasswordslist_big.txt ./testpdfs/testpasswordslist_huge.txt
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -c -o $@ $+
@@ -20,6 +21,10 @@ testall: test perftest
 test: test2 test5 test1 test3 test4 test6 test7
 
 perftest: perftest2 perftest5 perftest1 perftest3 perftest4 perftest6 perftest7
+
+unzip:
+	@if [ ! -f ./testpdfs/testpasswordslist_big.txt ]; then bunzip2 -k ./testpdfs/testpasswordslist_big.txt.bz2; fi;
+	@if [ ! -f ./testpdfs/testpasswordslist_huge.txt ]; then bunzip2 -k ./testpdfs/testpasswordslist_huge.txt.bz2; fi;
 
 test1: pdfcrack
 	@echo ""
@@ -31,12 +36,16 @@ test1: pdfcrack
 	@echo "-----------------"
 	./pdfcrack -o -c Jmy831 -n 6 -m 6 ./testpdfs/TestPDF1.pdf
 	@echo ""
+	@echo "Wordlist method"
+	@echo "---------------"
+	./pdfcrack -o -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF1.pdf
+	@echo ""
 	@echo "Pattern method"
 	@echo "--------------"
 	./pdfcrack -o -t 5 -e [Jmy][Jmy][y][Jmy1234567890][831][123458] ./testpdfs/TestPDF1.pdf
 
 
-perftest1: pdfcrack
+perftest1: pdfcrack unzip
 	@echo ""
 	@echo "============================================="
 	@echo "Performance testing Rev3 owner password"
@@ -45,6 +54,10 @@ perftest1: pdfcrack
 	@echo "Generative method"
 	@echo "================="
 	./pdfcrack -o -c Jmy1234567890 -n 6 -m 6 ./testpdfs/TestPDF1.pdf
+	@echo ""
+	@echo "Wordlist method"
+	@echo "================="
+	./pdfcrack -o -w ./testpdfs/testpasswordslist_big.txt ./testpdfs/TestPDF1.pdf
 	@echo ""
 	@echo "Pattern method"
 	@echo "=============="
@@ -62,12 +75,16 @@ test2: pdfcrack
 	@echo "-----------------"
 	./pdfcrack -c Jhe238 -n 6 -m 6 ./testpdfs/TestPDF2.pdf
 	@echo ""
+	@echo "Wordlist method"
+	@echo "---------------"
+	./pdfcrack -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF2.pdf
+	@echo ""
 	@echo "Pattern method"
 	@echo "--------------"
 	./pdfcrack -t 5 -e [Jhe][Jhe][e][Jhe1234567890][123][123458] ./testpdfs/TestPDF2.pdf
 
 
-perftest2: pdfcrack
+perftest2: pdfcrack unzip
 	@echo ""
 	@echo "================================================"
 	@echo "Performance testing Rev2 user password"
@@ -76,6 +93,10 @@ perftest2: pdfcrack
 	@echo "Generative method"
 	@echo "================="
 	./pdfcrack -c Jhe1234567890zyxwvutsrq -n 6 -m 6 ./testpdfs/TestPDF2.pdf
+	@echo ""
+	@echo "Wordlist method"
+	@echo "================="
+	./pdfcrack -w ./testpdfs/testpasswordslist_huge.txt ./testpdfs/TestPDF2.pdf
 	@echo ""
 	@echo "Pattern method"
 	@echo "=============="
@@ -93,12 +114,16 @@ test3: pdfcrack
 	@echo "-----------------"
 	./pdfcrack -c Niy546 -n 6 -m 6 ./testpdfs/TestPDF3.pdf
 	@echo ""
+	@echo "Wordlist method"
+	@echo "---------------"
+	./pdfcrack -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF3.pdf
+	@echo ""
 	@echo "Pattern method"
 	@echo "--------------"
 	./pdfcrack -t 5 -e [Niy][Niy][y][Niy1234567890][546][123546] ./testpdfs/TestPDF3.pdf
 
 	
-perftest3: pdfcrack
+perftest3: pdfcrack unzip
 	@echo ""
 	@echo "================================================"
 	@echo "Performance testing Rev3 (AES) user password"
@@ -107,6 +132,10 @@ perftest3: pdfcrack
 	@echo "Generative method"
 	@echo "================="
 	./pdfcrack -c Niy1234567890 -n 6 -m 6 ./testpdfs/TestPDF3.pdf
+	@echo ""
+	@echo "Wordlist method"
+	@echo "================="
+	./pdfcrack -w ./testpdfs/testpasswordslist_big.txt ./testpdfs/TestPDF3.pdf
 	@echo ""
 	@echo "Pattern method"
 	@echo "=============="
@@ -124,12 +153,16 @@ test4: pdfcrack
 	@echo "-----------------"
 	./pdfcrack -c Ktw810 -n 6 -m 6 ./testpdfs/TestPDF4.pdf
 	@echo ""
+	@echo "Wordlist method"
+	@echo "---------------"
+	./pdfcrack -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF4.pdf
+	@echo ""
 	@echo "Pattern method"
 	@echo "--------------"
 	./pdfcrack -t 5 -e [Ktw][Ktw][w][Ktw1234567890][810][423810] ./testpdfs/TestPDF4.pdf
 
 
-perftest4: pdfcrack
+perftest4: pdfcrack unzip
 	@echo ""
 	@echo "================================================"
 	@echo "Performance testing Rev3 (RC4) user password"
@@ -138,6 +171,10 @@ perftest4: pdfcrack
 	@echo "Generative method"
 	@echo "================="
 	./pdfcrack -c Ktw1234567890 -n 6 -m 6 ./testpdfs/TestPDF4.pdf
+	@echo ""
+	@echo "Wordlist method"
+	@echo "================="
+	./pdfcrack -w ./testpdfs/testpasswordslist_big.txt ./testpdfs/TestPDF4.pdf
 	@echo ""
 	@echo "Pattern method"
 	@echo "=============="
@@ -155,12 +192,16 @@ test5: pdfcrack
 	@echo "-----------------"
 	./pdfcrack -o -c Rkz573 -n 6 -m 6 ./testpdfs/TestPDF5.pdf
 	@echo ""
+	@echo "Wordlist method"
+	@echo "---------------"
+	./pdfcrack -o -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF5.pdf
+	@echo ""
 	@echo "Pattern method"
 	@echo "--------------"
 	./pdfcrack -o -t 5 -e [Rkz][Rkz][z][Rkz1234567890][127][123456] ./testpdfs/TestPDF5.pdf
 
 
-perftest5: pdfcrack
+perftest5: pdfcrack unzip
 	@echo ""
 	@echo "================================================"
 	@echo "Performance testing Rev2 owner password"
@@ -169,6 +210,10 @@ perftest5: pdfcrack
 	@echo "Generative method"
 	@echo "================="
 	./pdfcrack -o -c Rkz1234567890abcdefijl -n 6 -m 6 ./testpdfs/TestPDF5.pdf
+	@echo ""
+	@echo "Wordlist method"
+	@echo "================="
+	./pdfcrack -o -w ./testpdfs/testpasswordslist_huge.txt ./testpdfs/TestPDF5.pdf
 	@echo ""
 	@echo "Pattern method"
 	@echo "=============="
@@ -186,12 +231,16 @@ test6: pdfcrack
 	@echo "-----------------"
 	./pdfcrack -c Mnv731 -n 6 -m 6 ./testpdfs/TestPDF6.pdf
 	@echo ""
+	@echo "Wordlist method"
+	@echo "---------------"
+	./pdfcrack -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
+	@echo ""
 	@echo "Pattern method"
 	@echo "--------------"
 	./pdfcrack -t 5 -e [Mnv][Mnv][v][Mnv1234567890][731][731245] ./testpdfs/TestPDF6.pdf	
 
 
-perftest6: pdfcrack
+perftest6: pdfcrack unzip
 	@echo ""
 	@echo "================================================"
 	@echo "Performance testing Rev5 (AES 256) user password"
@@ -200,6 +249,10 @@ perftest6: pdfcrack
 	@echo "Generative method"
 	@echo "================="
 	./pdfcrack -c mnopqrstuvwxyz1234567890M -n 6 -m 6 ./testpdfs/TestPDF6.pdf
+	@echo ""
+	@echo "Wordlist method"
+	@echo "================="
+	./pdfcrack -w ./testpdfs/testpasswordslist_huge.txt ./testpdfs/TestPDF6.pdf
 	@echo ""
 	@echo "Pattern method"
 	@echo "=============="
@@ -217,12 +270,16 @@ test7: pdfcrack
 	@echo "-----------------"
 	./pdfcrack -o -c pasword -n 8 -m 8 ./testpdfs/TestPDF6.pdf
 	@echo ""
+	@echo "Wordlist method"
+	@echo "---------------"
+	./pdfcrack -o -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
+	@echo ""
 	@echo "Pattern method"
 	@echo "--------------"
 	./pdfcrack -o -t 5 -e [paswo][paswo][pas][s][wor1234567890][sword][sword][d] ./testpdfs/TestPDF6.pdf	
 
 
-perftest7: pdfcrack
+perftest7: pdfcrack unzip
 	@echo ""
 	@echo "================================================"
 	@echo "Performance testing Rev5 (AES 256) owner password"
@@ -231,6 +288,10 @@ perftest7: pdfcrack
 	@echo "Generative method"
 	@echo "================="
 	./pdfcrack -o -c paswor123d -n 8 -m 8 ./testpdfs/TestPDF6.pdf
+	@echo ""
+	@echo "Wordlist method"
+	@echo "================="
+	./pdfcrack -o -w ./testpdfs/testpasswordslist_huge.txt ./testpdfs/TestPDF6.pdf
 	@echo ""
 	@echo "Pattern method"
 	@echo "=============="
