@@ -178,17 +178,31 @@ static unsigned int passwordPatternLengths[PASSLENGTH];
 static unsigned long long int passwordPatternDivs[PASSLENGTH];
 static unsigned long long int maxPatternPasswords;
 
-static void setPattern(const char *pat)
+static uint8_t patternWordlistCache[PATTWORDLISTCACHESIZE][PASSLENGTH+1];
+static unsigned long long int patternWordlistCacheStartIndex;
+static unsigned long long int patternWordlistSize;
+static int patternWordClassIndex;
+
+static void setPattern(const char *pat, FILE *file, const char *wl)
 {
 	// Parse the pattern into basic [] format
 	pattern = parsePattern(pat);
 	patternLen = patternLength(pattern);
 	
+	// Set the wordlist and wordlistname
+	wordList = file;
+	wordListName = wl;
+	patternWordlistCacheStartIndex = 0LL;
+	patternWordlistSize = 0LL;
+	
+	if (wordList)
+		patternWordlistSize = setPatternWordlistCache(patternWordlistCache, wordList, wordListName);
+	
 	//passwordPatternArray = malloc(patternLen * sizeof(uint8_t*));
 	//passwordPatternLengths = malloc(patternLen * sizeof(unsigned int));
 	
 	// Convert basic format pattern into password pattern array	
-	setPatternArray(pattern, patternLen, passwordPatternArray, passwordPatternLengths, passwordPatternDivs);
+	patternWordClassIndex = setPatternArray(pattern, patternLen, passwordPatternArray, passwordPatternLengths, passwordPatternDivs, patternWordlistSize);
 	
 	maxPatternPasswords = passwordPatternDivs[patternLen-1]*passwordPatternLengths[patternLen-1];
 	//maxPatternPasswords = 0LL;
@@ -219,47 +233,94 @@ unsigned long long int getMaxPatternPasswords()
 
 int getPatternPassword(long long int n, uint8_t* patPassword)
 {
+	int patternPasswordLength = 0;
+	long long int in_n = n;
+	
 	if (!patPassword)
-		return 0;
+		return patternPasswordLength;
 		
 	if (!pattern)
-		return 0;
+		return patternPasswordLength;
 		
 	if (n >= maxPatternPasswords)
-		return 0;
+		return patternPasswordLength;
 	
 	// Temp stuff - to be deleted
-	//for (int i=0; i<patternLen-1; i++)
-	//	patPassword[i] = '&';
-	//patPassword[patternLen-1] = '\0';
+	for (int i=0; i<PASSLENGTH-1; i++)
+		patPassword[i] = '&';
+	
+	patPassword[PASSLENGTH-1] = '\0';
 	
 	int pos = patternLen-1;
+	int wordlen = 0;
 	
 	for (int i=patternLen-1; i>=0; i--)
 	{
 		int index = n / passwordPatternDivs[i];
 		
-		if (passwordPatternArray[i][index] != OPTPATCHAR)
-		{
-			patPassword[pos] = passwordPatternArray[i][index];
-			pos--;
+		if (i != patternWordClassIndex)
+		{ // Regular pattern classes
+			if (passwordPatternArray[i][index] != OPTPATCHAR)
+			{
+				patPassword[pos] = passwordPatternArray[i][index];
+				pos--;
+			}
+		}
+		else
+		{ // Use word from wordlist
+			uint8_t *word = patternWordlistCache[index];
+			
+			if (!word)
+				return patternPasswordLength;
+				
+			wordlen = strlen((const char*) word);
+			
+			if (wordlen < 1)
+				return patternPasswordLength;
+				
+			if (wordlen + patternLen - 1 > PASSLENGTH)
+			{
+				printf("Word %s at index %i is too long\n", 
+					word, index);
+				return patternPasswordLength;
+			}
+			
+			// Munge word into patPassword while adjusting pos
+			printf("Munging word %s into %s\n", word, patPassword);
+			
+			// Move patPassword filled so far to the right to fit in the word
+			memmove(patPassword+pos+1+wordlen, patPassword+pos+1, patternLen-pos-1);
+			pos += wordlen - 1;
+			
+			for (int j = wordlen -1 ; j >= -1; j--)
+			{
+				patPassword[pos] = word[j];
+				pos--;
+			}
+			
+			pos++;
+			
 		}
 		
 		n = n % passwordPatternDivs[i];
 	}
 	
 
-	//printf("prePatPassword:%s; pos:%i\n", patPassword, pos);
+	patternPasswordLength = patternLen+wordlen-1-pos-1;
+	
+	printf("prePatPassword:%s; pos:%i; length:%i\n", patPassword, pos, patternPasswordLength);
 	
 	if (pos != -1)
 	{
 		// Need to move the pattern password to the left to handle optional char
-		memmove(patPassword, patPassword+pos+1, patternLen-pos-1);
+		memmove(patPassword, patPassword+pos+1, patternPasswordLength);
 	}
 	
-	patPassword[patternLen-pos-1] = '\0';
+	patPassword[patternPasswordLength] = '\0';
 	
-	return (patternLen-pos-1);
+	printf("Returning password %s at %lli of length %i\n", patPassword, in_n, patternPasswordLength);
+	
+	return patternPasswordLength;
 }
 
 
@@ -281,7 +342,7 @@ initPasswords(const passwordMethod pm, FILE *file, const char *wl,
     break;
   
   case Pattern:
-    setPattern(pat);
+    setPattern(pat, file, wl);
     break;
     
   default:

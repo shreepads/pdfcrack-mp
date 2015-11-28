@@ -357,6 +357,16 @@ testcharclass: pdfcrack
 	./pdfcrack -t 5 -e "[:upper:]{1,2}[:lower:]{2,3}[:digit:][:punct:]" ./testpdfs/TestPDF7.pdf	
 	
 
+testwordclass:
+	@echo ""
+	@echo "----------------------------------------------------"
+	@echo "Testing Wordlist Class (using Rev5 user password)"
+	@echo "----------------------------------------------------"
+	@echo ""
+	@echo "Test 1: Only wordlist"
+	@echo "----------------------------"
+	./pdfcrack -t 1 -e "[:word:]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf	
+	
 
 debugold: pdfcrack
 	gdb --args ./pdfcrack -c Mnv731 -n 6 -m 6 ./testpdfs/TestPDF6.pdf

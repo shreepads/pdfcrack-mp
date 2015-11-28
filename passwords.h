@@ -28,6 +28,7 @@
 #include "common.h"
 
 #define PASSLENGTH 33
+#define PATTWORDLISTCACHESIZE 20000
 
 void
 initPasswords(const passwordMethod pm, FILE *file, const char *wl,

@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "passwords.h"
 #include "pattern.h"
 
@@ -59,6 +60,8 @@ static const char characterClassLiterals[NUMBERCLASSES][2][MAXCLASSCHARS] = {
 		"!\"#$%&'()*+,./:;<=>?@^_`|~-"
 	}
 };
+
+static const char wordClassLiteral[] = ":word:";
 
 /*
 static const uint8_t
@@ -331,10 +334,14 @@ char* parsePattern(const char* pat)
 
 
 // Turn a parsed patern string into an array of password chars and associated lengths of each
-void setPatternArray(const char* pat, unsigned int patLen, 
-	uint8_t* passwordPatArray[], unsigned int passwordPatLengths[], unsigned long long int passwordPatDivs[])
+// Return the position of the :word: character class if present, else return -1
+int setPatternArray(const char* pat, unsigned int patLen, 
+	uint8_t* passwordPatArray[], unsigned int passwordPatLengths[], unsigned long long int passwordPatDivs[],
+	unsigned long long int patternWordlistSize)
 {
 	printf("Parsed pattern: %s, length: %i\n", pat, patLen);
+	
+	int wordClassIndex = -1;
 	
 	// Create temp pattern holder for tokenisation, 2 less for the ends, 1 for the /0
 	char tokPat[strlen(pat)-2+1];
@@ -355,12 +362,20 @@ void setPatternArray(const char* pat, unsigned int patLen,
 	{
 		if (token)
 		{
-			//passwordPatArray[i] = malloc(strlen(token));
-			//strncpy(&passwordPatArray[i], token, strlen); 
+			if (strcmp(token, wordClassLiteral) != 0)
+			{// Any token other then the word class literal
+				//passwordPatArray[i] = malloc(strlen(token));
+				//strncpy(&passwordPatArray[i], token, strlen); 
 			
-			asprintf((char **)&passwordPatArray[i], "%s", token);
+				asprintf((char **)&passwordPatArray[i], "%s", token);
 			
-			passwordPatLengths[i] = strlen((char *) passwordPatArray[i]);
+				passwordPatLengths[i] = strlen((char *) passwordPatArray[i]);
+			}
+			else
+			{// Token is the word class literal
+				wordClassIndex = i;
+				passwordPatLengths[i] = patternWordlistSize;
+			}
 			
 			if (i==0)
 				passwordPatDivs[i]=1LL;
@@ -372,7 +387,48 @@ void setPatternArray(const char* pat, unsigned int patLen,
 	}
 	while((token = strtok_r(NULL, delimiter, &scratch)));
 	
-	return;
+	return wordClassIndex;
 	
 }
 
+unsigned long long int setPatternWordlistCache(uint8_t patternWordlistCache[][PASSLENGTH+1], FILE *wordListFile, const char *wordListName)
+{
+	unsigned long long int patternWordlistSize = 0LL;
+	printf("Going to load wordlist file: %s\n", wordListName);
+	
+	int chars_read, n;
+	char *line;
+	
+	chars_read = 0;
+	n = PASSLENGTH * 2;
+	line = (char *) malloc(PASSLENGTH * 2);
+
+	while (chars_read != -1)
+	{
+		chars_read = getline(&line, (size_t *) &n, wordListFile);
+		
+		if (chars_read != -1)
+		{
+			if (patternWordlistSize < PATTWORDLISTCACHESIZE)
+			{
+				int i;
+				for (i=0; i<chars_read && i<PASSLENGTH; i++)
+				{
+					if (line[i] != '\n'  &&  line[i] != '\r')
+						patternWordlistCache[patternWordlistSize][i] = line[i];
+				}
+				
+				patternWordlistCache[patternWordlistSize][i] = '\0';
+				
+				//printf("Read line number: %llu ; line: %s\n", 
+				//	patternWordlistSize, patternWordlistCache[patternWordlistSize]);
+			}
+			
+			patternWordlistSize++;
+		}
+	}
+
+	printf("Loaded wordlist file: %s of size %llu\n", wordListName, patternWordlistSize);
+	free(line);
+	return patternWordlistSize;
+}

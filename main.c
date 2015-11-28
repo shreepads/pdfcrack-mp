@@ -330,10 +330,11 @@ main(int argc, char** argv) {
 
   passwordMethod pmethod;
   
-  if (wordlistfile)
-  	pmethod = Wordlist;
-  else if (pattern)
+  // Pattern method also supports wordlist
+  if (pattern)
   	pmethod = Pattern;
+  else if (wordlistfile)
+  	pmethod = Wordlist;
   else
   	pmethod = Generative;
 

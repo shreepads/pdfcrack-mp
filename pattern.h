@@ -18,6 +18,7 @@
  *
  */
 
+#include "passwords.h"
 
 // Char used to indicate optional pattern char value
 #define OPTPATCHAR '\t'
@@ -26,6 +27,8 @@ char* parsePattern(const char* pat);
  
 unsigned int patternLength(const char* pattern);
 
-void setPatternArray(const char* pat, unsigned int patLen,  
-		uint8_t* passwordPatArray[], unsigned int passwordPatLengths[], unsigned long long int passwordPatDivs[]);
+int setPatternArray(const char* pat, unsigned int patLen,  
+		uint8_t* passwordPatArray[], unsigned int passwordPatLengths[], unsigned long long int passwordPatDivs[],
+		unsigned long long int patternWordlistSize);
 
+unsigned long long int setPatternWordlistCache(uint8_t patternWordlistCache[][PASSLENGTH+1], FILE *wordListFile, const char *wordListName);
