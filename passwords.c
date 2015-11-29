@@ -286,11 +286,13 @@ int getPatternPassword(long long int n, uint8_t* patPassword)
 			}
 			
 			// Munge word into patPassword while adjusting pos
-			printf("Munging word %s into %s\n", word, patPassword);
+			//printf("Munging word %s into %s\n", word, patPassword);
 			
 			// Move patPassword filled so far to the right to fit in the word
-			memmove(patPassword+pos+1+wordlen, patPassword+pos+1, patternLen-pos-1);
+			memmove(patPassword+pos+wordlen, patPassword+pos+1, patternLen-pos-1);
 			pos += wordlen - 1;
+			
+			//printf("Moved patPassword %s pos %i\n", patPassword, pos);
 			
 			for (int j = wordlen -1 ; j >= -1; j--)
 			{
@@ -308,7 +310,7 @@ int getPatternPassword(long long int n, uint8_t* patPassword)
 
 	patternPasswordLength = patternLen+wordlen-1-pos-1;
 	
-	printf("prePatPassword:%s; pos:%i; length:%i\n", patPassword, pos, patternPasswordLength);
+	//printf("prePatPassword:%s; pos:%i; length:%i\n", patPassword, pos, patternPasswordLength);
 	
 	if (pos != -1)
 	{
@@ -318,7 +320,7 @@ int getPatternPassword(long long int n, uint8_t* patPassword)
 	
 	patPassword[patternPasswordLength] = '\0';
 	
-	printf("Returning password %s at %lli of length %i\n", patPassword, in_n, patternPasswordLength);
+	//printf("Returning password %s at %lli of length %i\n", patPassword, in_n, patternPasswordLength);
 	
 	return patternPasswordLength;
 }
