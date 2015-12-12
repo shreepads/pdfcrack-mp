@@ -181,6 +181,7 @@ static unsigned long long int maxPatternPasswords;
 static uint8_t patternWordlistCache[PATTWORDLISTCACHESIZE][PASSLENGTH+1];
 static unsigned long long int patternWordlistCacheStartIndex;
 static unsigned long long int patternWordlistSize;
+static unsigned long long int patternWordlistDiv;
 static int patternWordClassIndex;
 
 static void setPattern(const char *pat, FILE *file, const char *wl)
@@ -194,6 +195,7 @@ static void setPattern(const char *pat, FILE *file, const char *wl)
 	wordListName = wl;
 	patternWordlistCacheStartIndex = 0LL;
 	patternWordlistSize = 0LL;
+	patternWordlistDiv = 1LL;
 	
 	if (wordList)
 		patternWordlistSize = setPatternWordlistCache(patternWordlistCache, wordList, wordListName);
@@ -204,7 +206,25 @@ static void setPattern(const char *pat, FILE *file, const char *wl)
 	// Convert basic format pattern into password pattern array	
 	patternWordClassIndex = setPatternArray(pattern, patternLen, passwordPatternArray, passwordPatternLengths, passwordPatternDivs, patternWordlistSize);
 	
-	maxPatternPasswords = passwordPatternDivs[patternLen-1]*passwordPatternLengths[patternLen-1];
+	if (patternWordlistSize != 0LL)
+	{ // There is a :word: pattern and the wordlist is not empty
+		if (patternLen != 0)
+		{
+			patternWordlistDiv = passwordPatternDivs[patternLen-1]*passwordPatternLengths[patternLen-1];
+
+		}
+		else
+		{ // Single :word: pattern
+			patternWordlistDiv = 1;
+		}
+		
+		maxPatternPasswords = patternWordlistSize * patternWordlistDiv;
+	}
+	else
+	{ // There isn't a :word: pattern
+		maxPatternPasswords = passwordPatternDivs[patternLen-1]*passwordPatternLengths[patternLen-1];
+	}
+	
 	//maxPatternPasswords = 0LL;
 	
 	for (unsigned int i=0; i<patternLen; i++)
@@ -215,6 +235,9 @@ static void setPattern(const char *pat, FILE *file, const char *wl)
 		printf("Pattern element %i: Value: %s, Length: %i, Divisor: %lli\n", 
 			i, passwordPatternArray[i], passwordPatternLengths[i], passwordPatternDivs[i]);
 	}
+	
+	printf("Wordlist Index: %i, Length: %llu, Divisor: %llu\n", 
+		patternWordClassIndex, patternWordlistSize, patternWordlistDiv);	
 	
 	printf("Max pattern passwords: %lli\n", maxPatternPasswords);
 	
@@ -247,68 +270,93 @@ int getPatternPassword(long long int n, uint8_t* patPassword)
 	
 	// Temp stuff - to be deleted
 	for (int i=0; i<PASSLENGTH-1; i++)
-		patPassword[i] = '&';
+		patPassword[i] = 'A' + (i % 26);
 	
 	patPassword[PASSLENGTH-1] = '\0';
 	
+	
 	int pos = patternLen-1;
 	int wordlen = 0;
+	uint8_t *word = 0;
+	unsigned long long int wordIndex = 0;
 	
+	// If applicable, get the word index and retrieve from cache, resetting the start index if necessary
+	if (patternWordlistSize != 0LL)
+	{
+		wordIndex = n / patternWordlistDiv;
+		
+		patternWordlistCacheStartIndex = 
+			getWordFromCache(patternWordlistCache, wordList, patternWordlistCacheStartIndex, 
+				wordIndex, &word);
+				
+		n = n % patternWordlistDiv;
+	}
+	
+	// Set default pos for where the word is to be inserted
+	int posAtWordIndex = 0;
+	
+	if (patternWordlistSize != 0LL)
+		if (patternLen-1 < patternWordClassIndex)
+			posAtWordIndex = patternLen;
+
+	
+	// Build the rest of the pattern password
 	for (int i=patternLen-1; i>=0; i--)
 	{
-		int index = n / passwordPatternDivs[i];
 		
-		if (i != patternWordClassIndex)
-		{ // Regular pattern classes
-			if (passwordPatternArray[i][index] != OPTPATCHAR)
-			{
-				patPassword[pos] = passwordPatternArray[i][index];
-				pos--;
-			}
-		}
-		else
-		{ // Use word from wordlist
-			uint8_t *word = patternWordlistCache[index];
-			
-			if (!word)
-				return patternPasswordLength;
-				
-			wordlen = strlen((const char*) word);
-			
-			if (wordlen < 1)
-				return patternPasswordLength;
-				
-			if (wordlen + patternLen - 1 > PASSLENGTH)
-			{
-				printf("Word %s at index %i is too long\n", 
-					word, index);
-				return patternPasswordLength;
-			}
-			
-			// Munge word into patPassword while adjusting pos
-			//printf("Munging word %s into %s\n", word, patPassword);
-			
-			// Move patPassword filled so far to the right to fit in the word
-			memmove(patPassword+pos+wordlen, patPassword+pos+1, patternLen-pos-1);
-			pos += wordlen - 1;
-			
-			//printf("Moved patPassword %s pos %i\n", patPassword, pos);
-			
-			for (int j = wordlen -1 ; j >= -1; j--)
-			{
-				patPassword[pos] = word[j];
-				pos--;
-			}
-			
-			pos++;
-			
+		if (patternWordlistSize != 0LL)
+			if (i == patternWordClassIndex)
+				posAtWordIndex = pos;
+
+		int index = n / passwordPatternDivs[i];
+
+		if (passwordPatternArray[i][index] != OPTPATCHAR)
+		{
+			patPassword[pos] = passwordPatternArray[i][index];
+			pos--;
 		}
 		
 		n = n % passwordPatternDivs[i];
+	
+	}
+	
+	// Munge the word into the built pattern	
+	if (word)
+	{
+		wordlen = strlen((const char*) word);
+		
+		if (wordlen < 1)
+			return patternPasswordLength;
+			
+		if (wordlen + patternLen > PASSLENGTH)
+		{
+			printf("Word %s at index %llu is too long\n", 
+				word, wordIndex);
+			return patternPasswordLength;
+		}
+		
+		// Munge word into patPassword while adjusting pos
+		//printf("\nMunging word %s into %s at index %i; patternLen is %i pos is %i, posAtWordIndex is %i\n", 
+		//	word, patPassword, patternWordClassIndex, patternLen, pos, posAtWordIndex);
+		
+		// Move patPassword filled to the right of right to fit in the word
+		//memmove(patPassword+pos+1+wordlen+patternWordClassIndex, 
+		//	patPassword+pos+1+patternWordClassIndex, patternLen-pos-1);
+		
+		memmove(patPassword+wordlen+posAtWordIndex, 
+			patPassword+posAtWordIndex, patternLen-posAtWordIndex);
+		
+		//printf("Moved patPassword %s, of length %i\n", patPassword, patternLen-posAtWordIndex);
+		
+		//memcpy(patPassword+pos+1+patternWordClassIndex, word, wordlen);
+		memcpy(patPassword+posAtWordIndex, word, wordlen);
+		
+		//printf("Copied word into patPassword %s, pos is %i\n", patPassword, pos);
+
 	}
 	
 
-	patternPasswordLength = patternLen+wordlen-1-pos-1;
+	patternPasswordLength = patternLen+wordlen-pos-1;
 	
 	//printf("prePatPassword:%s; pos:%i; length:%i\n", patPassword, pos, patternPasswordLength);
 	

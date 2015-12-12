@@ -16,7 +16,9 @@ clean:
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -c -o $@ $+
 		
-testall: test perftest
+testall: testpattern test perftest
+
+testpattern: testrange testmultirange testcharclass testwordclass
 
 test: test2 test5 test1 test3 test4 test6 test7
 
@@ -357,7 +359,7 @@ testcharclass: pdfcrack
 	./pdfcrack -t 5 -e "[:upper:]{1,2}[:lower:]{2,3}[:digit:][:punct:]" ./testpdfs/TestPDF7.pdf	
 	
 
-testwordclass:
+testwordclass: pdfcrack
 	@echo ""
 	@echo "----------------------------------------------------"
 	@echo "Testing Wordlist Class (using Rev5 user password)"
@@ -377,11 +379,11 @@ testwordclass:
 	@echo ""
 	@echo "Test 4: Ending with :word:, starting with ranged patterns"
 	@echo "------------------------------------------------------"
-	./pdfcrack -t 5 -e "{,3}[nml][:word:]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
+	./pdfcrack -t 5 -e "{,2}[xyz][:word:]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
 	@echo ""
 	@echo "Test 5: Not starting/ ending with :word:, using ranged patterns"
 	@echo "------------------------------------------------------"
-	./pdfcrack -t 5 -e "{,2}[nm][:word:]{2,4}[731]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
+	./pdfcrack -t 5 -e "{,1}[nm][:word:]{2,3}[731]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
 	
 	
 

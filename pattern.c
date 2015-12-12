@@ -296,7 +296,17 @@ unsigned int patternLength(const char* pat)
 
 	unsigned int i;
 	
-	for (i=0; pat[i]; pat[i] == '[' ? i++ : *pat++);
+	const char* walker = pat;
+	
+	for (i=0; walker[i]; walker[i] == '[' ? i++ : *walker++);
+	
+	// word class literal is not part of the main pattern
+	
+	if (strstr(pat, wordClassLiteral) != NULL)
+	{
+		//printf("Decrementing length\n");
+		i--;
+	}
 	
 	return i;
 }
@@ -370,19 +380,21 @@ int setPatternArray(const char* pat, unsigned int patLen,
 				asprintf((char **)&passwordPatArray[i], "%s", token);
 			
 				passwordPatLengths[i] = strlen((char *) passwordPatArray[i]);
+				
+				if (i==0)
+					passwordPatDivs[i]=1LL;
+				else
+					passwordPatDivs[i]=passwordPatLengths[i-1]*passwordPatDivs[i-1];
+					
+				i++;
+
 			}
 			else
-			{// Token is the word class literal
+			{// Token is the word class literal - don't store or move to next element
 				wordClassIndex = i;
-				passwordPatLengths[i] = patternWordlistSize;
+				//passwordPatLengths[i] = patternWordlistSize;
 			}
 			
-			if (i==0)
-				passwordPatDivs[i]=1LL;
-			else
-				passwordPatDivs[i]=passwordPatLengths[i-1]*passwordPatDivs[i-1];
-				
-			i++;
 		}
 	}
 	while((token = strtok_r(NULL, delimiter, &scratch)));
@@ -431,4 +443,17 @@ unsigned long long int setPatternWordlistCache(uint8_t patternWordlistCache[][PA
 	printf("Loaded wordlist file: %s of size %llu\n", wordListName, patternWordlistSize);
 	free(line);
 	return patternWordlistSize;
+}
+
+
+unsigned long long int getWordFromCache(uint8_t patternWordlistCache[][PASSLENGTH+1], FILE *wordListFile, unsigned long long int patternWordlistCacheStartIndex, unsigned long long int wordIndex, char **word)
+{
+	// If in cache set word and return original patternWordlistCacheStartIndex
+	if (wordIndex < patternWordlistCacheStartIndex + PATTWORDLISTCACHESIZE)
+	{
+		*word = patternWordlistCache[wordIndex];
+		return patternWordlistCacheStartIndex;
+	}
+	
+	return 0LL;
 }

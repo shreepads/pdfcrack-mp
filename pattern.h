@@ -32,3 +32,6 @@ int setPatternArray(const char* pat, unsigned int patLen,
 		unsigned long long int patternWordlistSize);
 
 unsigned long long int setPatternWordlistCache(uint8_t patternWordlistCache[][PASSLENGTH+1], FILE *wordListFile, const char *wordListName);
+
+unsigned long long int getWordFromCache(uint8_t patternWordlistCache[][PASSLENGTH+1], FILE *wordListFile, unsigned long long int patternWordlistCacheStartIndex, unsigned long long int wordIndex, char **word);
+
