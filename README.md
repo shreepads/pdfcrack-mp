@@ -1,6 +1,6 @@
 # pdfcrack-mp
 
-##Introduction
+## Introduction
 
 OpenMP update with patterns for pdfcrack.
 
@@ -10,7 +10,7 @@ There are also a number of test PDF files in the `testpdfs` folder and various t
 
 See https://github.com/shreepads/pdfcrack-mp/issues for the list of bugs, enhancements.
 
-##Branches
+## Branches
 
 * master - will always be kept in sync with the latest pdfcrack source.
 * baseopenmp - contains the stable version of pdfcrack-mp with all changes over pdfcrack
@@ -20,7 +20,7 @@ Please note that I have no plans to multi-core enable the standard Generative/ W
 * Generative method: baseopemp branch contains support for ranges that cover Generative method functionality - see Issue #4
 * Wordlist method: Still to be done - see Issue # 7
 
-##How to Use
+## How to Use
 
 At the moment there are no ready builds and I assume some level of familiarity with make.
 
