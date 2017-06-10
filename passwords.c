@@ -368,7 +368,7 @@ int getPatternPassword(long long int n, uint8_t* patPassword)
 	
 	patPassword[patternPasswordLength] = '\0';
 	
-	//printf("Returning password %s at %lli of length %i\n", patPassword, in_n, patternPasswordLength);
+	printf("Returning password %s at %lli of length %i\n", patPassword, in_n, patternPasswordLength);
 	
 	return patternPasswordLength;
 }

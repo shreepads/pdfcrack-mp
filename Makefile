@@ -367,23 +367,23 @@ testwordclass: pdfcrack
 	@echo ""
 	@echo "Test 1: Only :word:"
 	@echo "----------------------------"
-	./pdfcrack -t 5 -e "[:word:]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf	
+	./pdfcrack -t 1 -e "[:word:]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf	
 	@echo ""
 	@echo "Test 2: Starting with :word: followed by fixed pattern"
 	@echo "------------------------------------------------------"
-	./pdfcrack -t 5 -e "[:word:]{3,3}[731]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
+	#./pdfcrack -t 5 -e "[:word:]{3,3}[731]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
 	@echo ""
 	@echo "Test 3: Starting with :word: followed by ranged patterns"
 	@echo "------------------------------------------------------"
-	./pdfcrack -t 5 -e "[:word:]{2,4}[731]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
+	#./pdfcrack -t 5 -e "[:word:]{2,4}[731]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
 	@echo ""
 	@echo "Test 4: Ending with :word:, starting with ranged patterns"
 	@echo "------------------------------------------------------"
-	./pdfcrack -t 5 -e "{,2}[xyz][:word:]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
+	#./pdfcrack -t 5 -e "{,2}[xyz][:word:]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
 	@echo ""
 	@echo "Test 5: Not starting/ ending with :word:, using ranged patterns"
 	@echo "------------------------------------------------------"
-	./pdfcrack -t 5 -e "{,1}[nm][:word:]{2,3}[731]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
+	#./pdfcrack -t 5 -e "{,1}[nm][:word:]{2,3}[731]" -w ./testpdfs/testpasswordslist_small.txt ./testpdfs/TestPDF6.pdf
 	
 	
 

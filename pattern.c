@@ -448,11 +448,27 @@ unsigned long long int setPatternWordlistCache(uint8_t patternWordlistCache[][PA
 
 unsigned long long int getWordFromCache(uint8_t patternWordlistCache[][PASSLENGTH+1], FILE *wordListFile, unsigned long long int patternWordlistCacheStartIndex, unsigned long long int wordIndex, char **word)
 {
+	// If before cache something has gone wrong
+	if (wordIndex < patternWordlistCacheStartIndex)
+	{
+		printf("wordIndex %llu is less than patternWordlistCacheStartIndex %llu\n", 
+			wordIndex, patternWordlistCacheStartIndex);
+		return 0LL;
+	}
+	
 	// If in cache set word and return original patternWordlistCacheStartIndex
 	if (wordIndex < patternWordlistCacheStartIndex + PATTWORDLISTCACHESIZE)
 	{
 		*word = patternWordlistCache[wordIndex];
 		return patternWordlistCacheStartIndex;
+	}
+	
+	// wordIndex is outside the cache, fetch
+	#pragma omp critical
+	{
+		printf("Refreshing cache: wordIndex %llu is more than patternWordlistCacheStartIndex %llu \
+		plus PATTWORDLISTCACHESIZE %i\n",
+		wordIndex, patternWordlistCacheStartIndex, PATTWORDLISTCACHESIZE );
 	}
 	
 	return 0LL;
