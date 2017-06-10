@@ -582,7 +582,7 @@ runCrackRev3_o(void) {
   	int currentPatternPasswordLength;
   	
   	uint8_t enckey[16];     // Holds md5 digest
-  	uint8_t test[16];	// Holds test key
+  	uint8_t test[32];	// Holds test key
   	uint8_t tmpkey[16]; 	// Not sure what this does
   	
   	// thread's local copy of global variables
